@@ -10,28 +10,14 @@ using namespace std;
 
 bool operator< (const ColorSet &c1, const ColorSet &c2) { return c1.score > c2.score; }
 //staticに実体をもたせた
-int TSHwithPR::num_edges;
-vector<vector<int>> TSHwithPR::graph;
-ColorSet TSHwithPR::init_color; //初期の重みと色を記録,score,num_colorはnull
+int MCCPP::num_edges;
+vector<vector<int>> MCCPP::graph;
+ColorSet MCCPP::init_color; //初期の重みと色を記録,score,num_colorはnull
 priority_queue<
     ColorSet,
     vector<ColorSet>,
     greater<ColorSet>> TSHwithPR::elite_set;
-ColorSet TSHwithPR::current_color;
 
-vector<string> split(string str,char del) {
-    int first = 0;
-    int last = str.find_first_of(del);
-    vector<string> ans;
-    while(first < str.size()) {
-        string word(str, first, last - first);
-        ans.push_back(word);
-        first = last + 1;
-        last = str.find_first_of(del,first);
-        if(last == string::npos) last = str.size();
-    }
-    return ans;
-}
 //まだ
 TSHwithPR::TSHwithPR() {
 
@@ -40,116 +26,16 @@ TSHwithPR::TSHwithPR() {
 TSHwithPR::~TSHwithPR() {
 
 };
-
-
-//テスト済
-void TSHwithPR::_ShowGraph() {
-    for(int i=0;i<init_color.S.size();i++){
-        cout << init_color.S[i].weight << " ";
-    }
-    cout << endl;
-    for(int i=0;i<graph.size();i++) {
-        cout << "vertex" << i << ":";
-        for(int j=0;j<graph[i].size();j++) {
-            cout << graph[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
-
-void TSHwithPR::_ShowColorSet(ColorSet color_set) {
-    cout << "score:" << color_set.score  << endl;
-    for(ColorClass color_class : color_set.S) {
-        if(color_class.vertexes.size() == 0) continue;
-        for(int vertex : color_class.vertexes) { 
-            cout << vertex << " ";
-        }
-        cout << endl;
-    }
-}
-
-void TSHwithPR::InputGraph() {
-    string filename;
-    ifstream inputfile;
-    string line;
-    bool ok;
-    do {
-        ok = true;
-        cout << "グラフのファイル名を入力してください" << endl;
-        cin >> filename;
-        inputfile.open(filename);
-        if(inputfile.fail()) {
-            cout << "Error:ファイルにアクセス出来ません" << endl;
-            ok = false;
-        }
-    } while(!ok);
-
-    while(getline(inputfile,line)) {
-        vector<string> words = split(line, ' ');
-        //入力データの形式に合わせる
-        if(words[0] == "c") continue;
-        else if(words[0] == "p") {
-            graph.resize(stoi(words[2])); //余剰あってもいいかも
-            num_edges = stoi(words[3]);
-        }else if(words[0] == "e") {
-            int a = stoi(words[1])-1; //頂点を0からにした
-            int b = stoi(words[2])-1;
-            graph[a].push_back(b);
-            graph[b].push_back(a);
-        }
-    }
-}
-
-void TSHwithPR::InputColorSet() {
-    string filename;
-    ifstream inputfile;
-    string line;
-    bool ok;
-    do {
-        ok = true;
-        cout << "カラークラスのファイル名を入力してください" << endl;
-        cin >> filename;
-        inputfile.open(filename);
-        if(inputfile.fail()) {
-            cout << "Error:ファイルにアクセス出来ません" << endl;
-            ok = false;
-        }
-    }while(!ok);
-
-    while(getline(inputfile,line)) {
-        ColorClass C;
-        C.weight = stod(line);
-        init_color.S.push_back(C);
-    }
-    current_color = init_color;
-    cout << "ok" << endl;
-}
 //まだ
 void TSHwithPR::EliteSetUpdate() {
 
 }
-
-void TSHwithPR::Run() {
-
-}
-
-void TSHwithPR::ShowResult() {
-
-}
-
-void TSHwithPR::SavePath() {
-
-}
-
-void TSHwithPR::EvalFunction() {
-
-}
-
+//Fasible solutionに修正するやつ。
 void TSHwithPR::LocalSearch::CriticalOneMoveNeighborhood() {
 
 }
-//current_colorの初期解を作る
-//動いた（あってるかわからない）。とりあえずおｋとする。(どうせ並び替える)
+//バグ発見(テストケース_ReassignTest) uncolord_vertexesの個数が途中で変わらなくなる
+//残りの部分random設置もつくってない
 void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
     // num_adjacent , vertex numver
     set<int> uncolord_vertexes; 
@@ -157,6 +43,8 @@ void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
         uncolord_vertexes.insert( i );
     }
     while( graph.size() * RF >= current_color.search_color.size() ) {
+        cerr << graph.size() * RF <<" " << current_color.search_color.size() << endl;
+
         current_color.num_color++;//使用した色の数。割り当てるのは-1した値
         //塗られていない頂点集合の部分グラフでもっとも次数の大きいものを探す
         auto [ max_vertex, max_adjacent_set ]= LargestAdjacentVertexInSet(uncolord_vertexes,uncolord_vertexes);
@@ -166,8 +54,8 @@ void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
         set<int> Uset = max_adjacent_set;
         uncolord_vertexes = RemoveSet2Set(uncolord_vertexes,Uset);
         uncolord_vertexes.erase(max_vertex);
-        while( uncolord_vertexes.size() != 0 ) {
-            cout << uncolord_vertexes.size() << endl;
+        while( uncolord_vertexes.size() != 0 && graph.size() * RF >= current_color.search_color.size()) {
+            //cerr << current_color.search_color.size() << endl;
             //uncolord_setの中でUともっとも隣接している頂点を選択
             auto [ max_vertex, max_adjacent_set  ]= LargestAdjacentVertexInSet(uncolord_vertexes,Uset);
             current_color = MoveVertexColor(current_color,max_vertex,current_color.num_color-1);
@@ -193,15 +81,6 @@ pair<int, set<int>> TSHwithPR::LargestAdjacentVertexInSet(const set<int> candida
         }
     }
     return {max_vertex , max_adjacent_set};
-}
-//テストクリア(LargestAdjacentVErtexInSetに内包しているため)
-set<int> TSHwithPR::AdjacentColorSet(set<int> vertexes_set,int vertex) {
-    vector<int> g_adjasent_set = graph[vertex];//頂点vertexの隣合う頂点はグラフから確認できる
-    set<int> ans_set;
-    for (int vertex : g_adjasent_set) {
-        if(vertexes_set.find(vertex) != vertexes_set.end()) ans_set.insert(vertex);
-    }
-    return ans_set;
 }
 //テストクリア(テストケース... _RemoveSetTest)
 template <typename T> //あらゆる集合の型に対してremoveできるようにした
@@ -279,6 +158,7 @@ void TSHwithPR::_MoveVertexColorTest() {
 }
 
 void TSHwithPR::_ReassignTest() {
-    LocalSearch::ReassignLargestCardinality();
+    LocalSearch::ReassignLargestCardinality(0.7);
+    current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
 }
