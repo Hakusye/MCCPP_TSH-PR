@@ -1,12 +1,8 @@
 #pragma once
 #include <queue>
-#include <vector>
 #include <utility>
-#include "struct.hpp"
+#include "util.hpp"
 #include "MCCPP.hpp"
-
-//used priority_queue
-bool operator<(const ColorSet &c1, const ColorSet &c2);
 
 class TSHwithPR : public MCCPP {
   private:
@@ -16,11 +12,9 @@ class TSHwithPR : public MCCPP {
         std::greater<ColorSet>> elite_set;
     
     //実装上、あると便利な関数達
-    static ColorSet MoveVertexColor(ColorSet target_set,int pre_vertex,int after_color );
-    static void MoveColorWeight();
+    static void MoveColorWeight(); //重みを移動させる時に使う
     template <typename T>
     static std::set<T> RemoveSet2Set(std::set<T> main_set,const std::set<T> remove_set);
-    static std::pair<int, std::set<int>> LargestAdjacentVertexInSet(const std::set<int> candidate_set,const std::set<int> graph_sub_set);
 
   public:
     TSHwithPR();
@@ -43,7 +37,11 @@ class TSHwithPR : public MCCPP {
         std::vector<VertexMove> tabu_list;
         int max_perturbation;
     };
-    static void EliteSetUpdate();
+    class EliteSetUpdate {
+      public:
+        void PriorHighScore();
+
+    };
     // その他機能
 
     //test関数。あとで消す

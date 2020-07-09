@@ -1,14 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <vector>
-#include <set>
 #include <utility>
+#include <random>
 #include "TSHwithPR.hpp"
-#include "struct.hpp"
+#include "util.hpp"
 using namespace std;
 
-bool operator< (const ColorSet &c1, const ColorSet &c2) { return c1.score > c2.score; }
 //staticに実体をもたせた
 int MCCPP::num_edges;
 vector<vector<int>> MCCPP::graph;
@@ -26,38 +23,39 @@ TSHwithPR::TSHwithPR() {
 TSHwithPR::~TSHwithPR() {
 
 };
-//まだ
-void TSHwithPR::EliteSetUpdate() {
-
+//テストクリア(テストケース... _RemoveSetTest)
+template <typename T>
+set<T> TSHwithPR::RemoveSet2Set(set<T> main_set,const set<T> remove_set) {
+    for ( T remove_element : remove_set) {
+        if( main_set.find(remove_element) != main_set.end() ) main_set.erase( remove_element );
+    }
+    return main_set;
 }
+//まだ
 //Fasible solutionに修正するやつ。
 void TSHwithPR::LocalSearch::CriticalOneMoveNeighborhood() {
 
 }
-//バグ発見(テストケース_ReassignTest) uncolord_vertexesの個数が途中で変わらなくなる
-//残りの部分random設置もつくってない
+//バグ発見 <- 対処済み
+//多分完璧
 void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
-    // num_adjacent , vertex numver
     set<int> uncolord_vertexes; 
     for(int i = 0; i < graph.size(); i++) {
         uncolord_vertexes.insert( i );
     }
-    while( graph.size() * RF >= current_color.search_color.size() ) {
-        cerr << graph.size() * RF <<" " << current_color.search_color.size() << endl;
-
+    while( graph.size() * RF > current_color.search_color.size() ) {
         current_color.num_color++;//使用した色の数。割り当てるのは-1した値
         //塗られていない頂点集合の部分グラフでもっとも次数の大きいものを探す
-        auto [ max_vertex, max_adjacent_set ]= LargestAdjacentVertexInSet(uncolord_vertexes,uncolord_vertexes);
+        auto [ max_vertex, max_adjacent_set ] = LargestAdjacentVertexInSet(uncolord_vertexes,uncolord_vertexes);
         // 選んだ頂点を今操作している色に変更
         current_color = MoveVertexColor(current_color,max_vertex,current_color.num_color-1);
         // 初回のUとmax_adjacent_setが同等。V'からUの要素を抜く必要がある
         set<int> Uset = max_adjacent_set;
         uncolord_vertexes = RemoveSet2Set(uncolord_vertexes,Uset);
         uncolord_vertexes.erase(max_vertex);
-        while( uncolord_vertexes.size() != 0 && graph.size() * RF >= current_color.search_color.size()) {
-            //cerr << current_color.search_color.size() << endl;
+        while( uncolord_vertexes.size() != 0 ) {
             //uncolord_setの中でUともっとも隣接している頂点を選択
-            auto [ max_vertex, max_adjacent_set  ]= LargestAdjacentVertexInSet(uncolord_vertexes,Uset);
+            auto [ max_vertex, max_adjacent_set ] = LargestAdjacentVertexInSet(uncolord_vertexes,Uset);
             current_color = MoveVertexColor(current_color,max_vertex,current_color.num_color-1);
             //V'からUの要素を抜く,
             //U と V' adjacent to vの足し合わせを表現
@@ -68,39 +66,17 @@ void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
         }
         uncolord_vertexes = Uset;
     }
-}
-//テストクリア(テストケース..._LargestAdjacentTest)
-pair<int, set<int>> TSHwithPR::LargestAdjacentVertexInSet(const set<int> candidate_set,const set<int> graph_sub_set) {
-    set<int> max_adjacent_set = {}; int max_vertex = -1;
-    // uncolord_setの中でUともっとも隣接している頂点を選択
-    for(int vertex : candidate_set) {
-        set<int> tmp_adjacent_set = AdjacentColorSet(graph_sub_set, vertex);
-        if(max_adjacent_set.size() < tmp_adjacent_set.size()) {
-            max_adjacent_set = tmp_adjacent_set;
-            max_vertex = vertex;
-        }
+    //O(n)にできそうだけど、わかりやすさからO(nlogn)を選択
+    //残りは今ある色からランダムに決める
+    std::mt19937 mt{ std::random_device{}() };
+    mt.seed(4649);
+    std::uniform_int_distribution<int> dist(0, current_color.num_color-1);
+
+    for (int vertex = 0; vertex < graph.size(); vertex++) {
+        map<int,int> search_color = current_color.search_color;
+        if( search_color.find(vertex) != search_color.end() ) continue;
+        current_color = MoveVertexColor(current_color,vertex,dist(mt));
     }
-    return {max_vertex , max_adjacent_set};
-}
-//テストクリア(テストケース... _RemoveSetTest)
-template <typename T> //あらゆる集合の型に対してremoveできるようにした
-set<T> TSHwithPR::RemoveSet2Set(set<T> main_set,const set<T> remove_set) {
-    for ( T remove_element : remove_set) {
-        if( main_set.find(remove_element) != main_set.end() ) main_set.erase( remove_element );
-    }
-    return main_set;
-}
-//テストクリア(テストケース... _MoveVertexColorTest)
-ColorSet TSHwithPR::MoveVertexColor(ColorSet target_set,int pre_vertex,int after_color) {
-    //どこかの色に属しているなら、そこから消す
-    auto tmp = target_set.search_color.find(pre_vertex);
-    if( tmp != target_set.search_color.end() ) {
-        int pre_color = target_set.search_color[pre_vertex];
-        target_set.S[pre_color].vertexes.erase(pre_vertex);
-    }
-    target_set.search_color[pre_vertex] = after_color; //追加も入れ替えも両対応(map最高!)
-    target_set.S[after_color].vertexes.insert(pre_vertex);
-    return target_set;
 }
 //まだ
 void TSHwithPR::PathRelinkng::CalcMoveDistance() {
@@ -119,6 +95,9 @@ TSHwithPR::Perturbation::Perturbation(int perturbation) {
     max_perturbation = perturbation;
 }
 
+void TSHwithPR::EliteSetUpdate::PriorHighScore() {
+
+}
 //テストケース
 void TSHwithPR::_LargestAdjacentTest() {
     set<int> uncolord_vertexes; 
@@ -158,7 +137,6 @@ void TSHwithPR::_MoveVertexColorTest() {
 }
 
 void TSHwithPR::_ReassignTest() {
-    LocalSearch::ReassignLargestCardinality(0.7);
+    LocalSearch::ReassignLargestCardinality();
     current_color.score = EvalFunction(current_color);
-    _ShowColorSet(current_color);
 }

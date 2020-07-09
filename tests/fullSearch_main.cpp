@@ -3,11 +3,11 @@
 #include "../src/util.hpp"
 #include "../src/FullSearch.hpp"
 using namespace std;
-
 int main(){
-    TSHwithPR test;
+    FullSearch test;
     test.InputGraph();
     test.InputColorSet();
-    test._ReassignTest();
-    test._ShowColorSet(test.current_color);
+    test.Calc();
+    test._ShowColorSet(test.current_color); 
+    cout << "Eval:" << test.EvalFunction(test.current_color) << endl;
 }
