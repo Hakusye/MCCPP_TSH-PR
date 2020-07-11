@@ -8,6 +8,6 @@ int main(){
     TSHwithPR test;
     test.InputGraph();
     test.InputColorSet();
-    test._ReassignTest();
+    test._Reassign2SmallerOneTest();
     test._ShowColorSet(test.current_color);
 }

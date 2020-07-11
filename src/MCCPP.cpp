@@ -1,5 +1,3 @@
-#include <iostream>
-#include <fstream>
 #include "TSHwithPR.hpp"
 #include "util.hpp"
 using namespace std;
@@ -14,8 +12,8 @@ MCCPP::~MCCPP() {
 
 }
 //テストクリア(ほぼ確実に正しい)
-double MCCPP::EvalFunction(const ColorSet color_set) {
-    double sum = 0;
+float MCCPP::EvalFunction(const ColorSet color_set) {
+    float sum = 0;
     for(ColorClass target : color_set.S) {
         sum += target.weight * target.vertexes.size();
         for(int vertex : target.vertexes) { //その色の中で隣接があるなら数分M足す
@@ -41,6 +39,7 @@ void MCCPP::_ShowGraph() {
 }
 
 void MCCPP::_ShowColorSet(ColorSet color_set) {
+    cout << fixed << setprecision(1) << endl;
     cout << "score:" << color_set.score  << endl;
     for(ColorClass color_class : color_set.S) {
         if(color_class.vertexes.size() == 0) continue;
@@ -133,7 +132,7 @@ set<int> MCCPP::AdjacentColorSet(set<int> vertexes_set,int target_vertex) {
     }
     return ans_set;
 }
-//テストクリア(テストケース... _MoveVertexColorTest)(Diffを追加してからは未テスト)
+//テストクリア(テストケース... _MoveVertexColorTest)
 //動作後の整合性を整える(評価関数変えたくない時あるのでDiffEvalは別でやる)
 ColorSet MCCPP::MoveVertexColor(ColorSet target_set,int pre_vertex,int after_color) {
     //どこかの色に属しているなら、そこから消す
@@ -146,9 +145,9 @@ ColorSet MCCPP::MoveVertexColor(ColorSet target_set,int pre_vertex,int after_col
     target_set.S[after_color].vertexes.insert(pre_vertex);
     return target_set;
 }
-//未テスト（なにかと一緒にテストする）
-double MCCPP::DiffEvalFunction(const ColorSet color_set,int change_vertex,int after_color) {
-    double ans = color_set.score;
+//テストクリア(テストケース... _ReassignLargestCardinality )
+float MCCPP::DiffEvalFunction(const ColorSet color_set,int change_vertex,int after_color) {
+    float ans = color_set.score;
     int pre_color = color_set.search_color.at(change_vertex);
     
     ans -= color_set.S[pre_color].weight;

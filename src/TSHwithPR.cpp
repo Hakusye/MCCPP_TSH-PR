@@ -1,7 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <utility>
-#include <random>
 #include "TSHwithPR.hpp"
 #include "util.hpp"
 using namespace std;
@@ -31,14 +27,59 @@ set<T> TSHwithPR::RemoveSet2Set(set<T> main_set,const set<T> remove_set) {
     }
     return main_set;
 }
-//まだ
-//Fasible solutionに修正するやつ。
-void TSHwithPR::LocalSearch::CriticalOneMoveNeighborhood() {
-
+//テストクリア(テストケース... _Reassign2SmallerOneTest)
+ColorSet TSHwithPR::SortColorWeight(ColorSet color_set) {
+    vector<float> color_weight;
+    for( int i=0; i < color_set.S.size(); i++) {
+        color_weight.push_back( color_set.S[i].weight );
+    }
+    sort(color_set.S.begin() , color_set.S.end(), greater<ColorClass>() );
+    for( int i=0; i < color_set.S.size(); i++ ) {
+        color_set.S[i].weight = color_weight[i];
+    }
+    return color_set;
+}
+//テストクリア(テストケース.. _Reassigntest) ただし、tabulist追加してない
+// 1回の実行につきひとつの衝突をなくす。1つ1つの動作はbast solutionを選ぶ
+ColorSet TSHwithPR::Greedy::CriticalOneMoveNeighborhood(ColorSet target_color_set) {
+    //衝突頂点ををループ(入力として与えておく?)
+    //すべての衝突頂点に衝突を無くせる色に変える全探索をして一番よかったやつにする
+    //まだtabulistを組み込んでいない
+    ColorSet ans_color_set = target_color_set;
+    //衝突セットつくる
+    set<int> conflict_set;
+    for (int vertex = 0; vertex < graph.size(); vertex++) {
+        int v_color = target_color_set.search_color.at(vertex);
+        set<int> adjacent_set = AdjacentColorSet(target_color_set.S[v_color].vertexes,vertex);
+        if(!adjacent_set.empty()) conflict_set.insert(vertex);
+    }
+    if(conflict_set.empty()){
+        cerr << "衝突してないです" << endl;
+        return target_color_set;
+    }
+    for (int vertex : conflict_set) {
+        ColorSet tmp_color_set = target_color_set;
+        int current_color = target_color_set.search_color[vertex];
+        float tmp_score;
+        for ( int color = 0; color < target_color_set.num_color+1; color++) {
+            if(color == current_color) continue;
+            //次に変える予定の色と隣接していないものをえらぶ
+            set<int> adjacent_set = AdjacentColorSet(target_color_set.S[color].vertexes,vertex);
+            if(!adjacent_set.empty()) continue;
+            tmp_score = DiffEvalFunction(tmp_color_set,vertex,color);
+            if(ans_color_set.score > tmp_score) { //tabulist弾くのも書く必要ある
+                ans_color_set = tmp_color_set;
+                ans_color_set.score = tmp_score;
+                if(color == target_color_set.num_color) ans_color_set.num_color++;
+                ans_color_set = MoveVertexColor(ans_color_set,vertex,color);
+            }
+        }
+    }
+    return ans_color_set;
 }
 //バグ発見 <- 対処済み
-//多分完璧
-void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
+//多分完璧(RF=1.0で完全な貪欲ができる)
+void TSHwithPR::Greedy::ReassignLargestCardinality(double RF = 0.5) {
     set<int> uncolord_vertexes; 
     for(int i = 0; i < graph.size(); i++) {
         uncolord_vertexes.insert( i );
@@ -78,7 +119,28 @@ void TSHwithPR::LocalSearch::ReassignLargestCardinality(double RF = 0.5) {
         current_color = MoveVertexColor(current_color,vertex,dist(mt));
     }
 }
-//まだ
+//テストクリア(テストケース... _Reassign2SmallerOneTest)
+ColorSet TSHwithPR::LocalSearch::Reassign2SmallerOne( ColorSet color_set ) {
+    //使用数が大きい順に、重みが小さい順にする
+    color_set = SortColorWeight(color_set);
+    // 頂点数が多い順に回し、今選ばれているカラークラスより小さいやつ(なければそのサイズ)にいれる
+    for (int target_color = 1; target_color < color_set.S.size(); target_color++) {
+        set<int> target_vartex = color_set.S[target_color].vertexes;
+        for(int vertex : target_vartex) { 
+            for (int cacndidate_color = 0; cacndidate_color < target_color; cacndidate_color++) {
+                //候補集合と今見ている頂点が隣接してるならスキップ
+                set<int> adjacent_check = AdjacentColorSet(color_set.S[cacndidate_color].vertexes,vertex);
+                if(!adjacent_check.empty()) continue;
+                //更新。これより後ろみても意味なしなのでbreak
+                color_set.score = DiffEvalFunction(color_set,vertex,cacndidate_color);
+                color_set = MoveVertexColor(color_set,vertex,cacndidate_color);
+                break;
+            }
+        } 
+    }
+    return color_set;
+}
+
 void TSHwithPR::PathRelinkng::CalcMoveDistance() {
 
 }
@@ -91,13 +153,14 @@ void TSHwithPR::Perturbation::SetRandomColor() {
 
 }
 
-TSHwithPR::Perturbation::Perturbation(int perturbation) { 
+TSHwithPR::Perturbation::Perturbation(int perturbation=0.3) { 
     max_perturbation = perturbation;
 }
 
 void TSHwithPR::EliteSetUpdate::PriorHighScore() {
 
 }
+
 //テストケース
 void TSHwithPR::_LargestAdjacentTest() {
     set<int> uncolord_vertexes; 
@@ -111,7 +174,6 @@ void TSHwithPR::_LargestAdjacentTest() {
     }
     cout << endl;
 }
-
 void TSHwithPR::_RemoveSet2SetTest() {
     set<int> a = {1,2,3,4,5,6,7,8,9};
     set<int> b = {1,3,5,7,9};
@@ -121,7 +183,6 @@ void TSHwithPR::_RemoveSet2SetTest() {
     }
     cout << endl;
 }
-
 void TSHwithPR::_MoveVertexColorTest() {
     ColorSet cs;
     cs.score = 100;
@@ -135,8 +196,16 @@ void TSHwithPR::_MoveVertexColorTest() {
     }
     _ShowColorSet(cs);
 }
-
 void TSHwithPR::_ReassignTest() {
-    LocalSearch::ReassignLargestCardinality();
+    Greedy::ReassignLargestCardinality(0.5);
     current_color.score = EvalFunction(current_color);
+    _ShowColorSet(current_color);
+    while(current_color.score > 10000) { //Criticalを回す条件式は後で考える必要あり
+        current_color = Greedy::CriticalOneMoveNeighborhood(current_color);
+        _ShowColorSet(current_color);
+    }
+}
+void TSHwithPR::_Reassign2SmallerOneTest() {
+    _ReassignTest();
+    current_color = LocalSearch::Reassign2SmallerOne(current_color);
 }

@@ -1,12 +1,20 @@
-#include <set>
-#include <string>
-#include <vector>
-#include <map>
 #include "util.hpp"
 
 using namespace std;
 
-bool operator< (const ColorSet &c1, const ColorSet &c2) { return c1.score > c2.score; }
+bool ColorClass::operator< (const ColorClass &another_color_class) const {
+    return vertexes.size() < another_color_class.vertexes.size();
+}
+bool ColorClass::operator> (const ColorClass &another_color_class) const {
+    return vertexes.size() > another_color_class.vertexes.size();
+}
+
+bool ColorSet::operator< (const ColorSet &another_color_set) const {
+    return score < another_color_set.score;
+}
+bool ColorSet::operator> (const ColorSet &another_color_set) const {
+    return score > another_color_set.score;
+}
 
 vector<string> split(string str,char del) {
     int first = 0;

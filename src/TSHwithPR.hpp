@@ -1,6 +1,4 @@
 #pragma once
-#include <queue>
-#include <utility>
 #include "util.hpp"
 #include "MCCPP.hpp"
 
@@ -12,7 +10,7 @@ class TSHwithPR : public MCCPP {
         std::greater<ColorSet>> elite_set;
     
     //実装上、あると便利な関数達
-    static void MoveColorWeight(); //重みを移動させる時に使う
+    static ColorSet SortColorWeight(ColorSet color_set); //使用数の多い順にしたい時につかう　
     template <typename T>
     static std::set<T> RemoveSet2Set(std::set<T> main_set,const std::set<T> remove_set);
 
@@ -20,10 +18,14 @@ class TSHwithPR : public MCCPP {
     TSHwithPR();
     ~TSHwithPR();
     // メイン探索
+    class Greedy {
+      public:
+        static ColorSet CriticalOneMoveNeighborhood(ColorSet target_color_set);         // feasible search
+        static void ReassignLargestCardinality(double RF); // solution_improvement
+    };
     class LocalSearch {
       public:
-        static void CriticalOneMoveNeighborhood();         // feasible search
-        static void ReassignLargestCardinality(double RF); // solution_improvement
+        static ColorSet Reassign2SmallerOne(ColorSet color_set);  
     };
     class PathRelinkng {
       public:
@@ -49,4 +51,5 @@ class TSHwithPR : public MCCPP {
     static void _RemoveSet2SetTest();
     static void _MoveVertexColorTest();
     static void _ReassignTest();
+    static void _Reassign2SmallerOneTest();
 };
