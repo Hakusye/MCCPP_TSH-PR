@@ -3,7 +3,10 @@
 //基底クラス。Input,OutPutや評価関数,移動系など
 class MCCPP {
   protected:
+    static std::mt19937 mt;
+    static std::random_device rd;
     const static int M = 1e5; //切り捨て対策
+    const static int INF = 1e9+7;
     static int num_edges;
     static std::vector<std::vector<int>> graph;
     static ColorSet init_color; //初期の重みと色を記録,score,num_colorはnull

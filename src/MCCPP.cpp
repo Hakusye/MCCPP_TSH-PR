@@ -5,7 +5,7 @@ using namespace std;
 ColorSet MCCPP::current_color;
 //まだ
 MCCPP::MCCPP() {
-
+    mt.seed(rd());
 }
 
 MCCPP::~MCCPP() {
