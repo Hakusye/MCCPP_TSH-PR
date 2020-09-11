@@ -7,6 +7,6 @@ using namespace std;
 int main(){
     TSHwithPR test;
     //test._ReassignTest();
-    test._Reassign2SmallerOneTest();
-    //test.Run();
+    //test._Reassign2SmallerOneTest();
+    test.Run();
 }

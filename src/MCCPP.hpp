@@ -5,7 +5,7 @@ class MCCPP {
   protected:
     static std::mt19937 mt;
     static std::random_device rd;
-    const static int M = 1e5; //切り捨て対策
+    const static int M = 1e4; //切り捨て対策
     const static int INF = 1e9+7;
     static int num_edges;
     static std::vector<std::vector<int>> graph;

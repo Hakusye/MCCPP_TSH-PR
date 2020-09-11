@@ -272,6 +272,7 @@ ColorSet TSHwithPR::Perturbation::SetRandomColor(ColorSet target_color_set,int m
 void TSHwithPR::EliteSetUpdate::PriorHighScore(ColorSet target_color_set) {
     //elite setにかぶりがあるなら更新しない
     //if( EliteSetHaveElement(elite_set,target_color_set) ) return;
+    target_color_set.score = EvalFunction( target_color_set );
     if(elite_set.size() < elite_max_size) { 
         elite_set.push_back(target_color_set);
         return;
@@ -307,7 +308,7 @@ void TSHwithPR::Run() {
     clock_t start = clock();
     InputGraph();
     InputColorSet();
-    Greedy::ReassignLargestCardinality(0.5);
+    Greedy::ReassignLargestCardinality(0.7);
     current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
     do {
@@ -325,8 +326,9 @@ void TSHwithPR::Run() {
         current_color = LocalSearch::Reassign2SmallerOne( current_color );
         EliteSetUpdate::PriorHighScore( current_color );
         current_color = Perturbation::SetRandomColor( current_color,sqrt( graph.size() ) );
-    }while( double( clock() - start ) / CLOCKS_PER_SEC < 10.0 );
+    }while( double( clock() - start ) / CLOCKS_PER_SEC < 15.0 );
     cout << "結果" << endl;
+    // floatによって桁起してるから最後にしっかり調整する
     current_color.score = EvalFunction(current_color);
     _ShowColorSet( Result() );
 }
@@ -369,18 +371,21 @@ void TSHwithPR::_MoveVertexColorTest() {
 void TSHwithPR::_ReassignTest() {
     InputGraph();
     InputColorSet();
-    Greedy::ReassignLargestCardinality(1.0);
+    Greedy::ReassignLargestCardinality(0.7);
     current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
-    while(current_color.score > M) { //Criticalを回す条件式は後で考える必要あり
+    //exit(0);
+    while(current_color.score >  M) { //Criticalを回す条件式は後で考える必要あり
         current_color = Greedy::CriticalOneMoveNeighborhood(current_color);
         //_ShowColorSet(current_color);
     }
     _ShowColorSet(current_color);
 }
+//たまにスコアがマイナスになるバグがある
 void TSHwithPR::_Reassign2SmallerOneTest() {
     _ReassignTest();
     current_color = LocalSearch::Reassign2SmallerOne(current_color);
+    current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
 }
 void TSHwithPR::_PathRelinkingTest() { //元はCalcDistanceTest
