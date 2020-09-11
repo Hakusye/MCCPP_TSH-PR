@@ -16,7 +16,8 @@ FullSearch::FullSearch() {
 FullSearch::~FullSearch() {
 
 };
-
+//若干やっかいなので治すのはとりあえず保留
+/*
 void FullSearch::Calc() {
     //初期解すべて0
     current_color.score = INF;
@@ -26,6 +27,7 @@ void FullSearch::Calc() {
     }
 }
 //最大の値をそのままcurrent_colorにいれる
+
 void FullSearch::DFS4FullSerch( ColorSet color_set ,int target_vertex,int color) {
     //色を追加したことによる変化
     color_set.S[color].vertexes.insert(target_vertex);
@@ -44,3 +46,4 @@ void FullSearch::DFS4FullSerch( ColorSet color_set ,int target_vertex,int color)
         DFS4FullSerch(color_set, target_vertex+1, i);
     }
 }
+*/

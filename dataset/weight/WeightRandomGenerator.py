@@ -2,8 +2,8 @@ import random
 random.seed(4649)
 
 if __name__ == "__main__":
-    path =  '1000_max3000_random.dat'
-    weights =  [ round(random.random() * 2999.9 ,1) + 0.1 for i in range(1000) ]
+    path =  '120_max1000_random.dat'
+    weights =  [ random.randint(1,1000)  for i in range(120) ]
     weights.sort()
     with open(path,mode='w') as f:
         for weight in weights:

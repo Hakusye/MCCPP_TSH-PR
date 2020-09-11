@@ -3,17 +3,13 @@
 #include "MCCPP.hpp"
 
 class TSHwithPR : public MCCPP {
-  private:
+  protected:
     static const int elite_max_size = 5;
     static std::set<VertexMove> tabu_list;
     static std::vector<ColorSet> elite_set;
     
     //実装上、あると便利な関数達
     static ColorSet SortColorWeight(ColorSet color_set); //使用数の多い順にしたい時につかう　
-    template <typename T>
-    static std::set<T> RemoveSet2Set(std::set<T> main_set,const std::set<T> remove_set);
-    template <typename T>
-    static std::set<T> IntersectionSet2Set(const std::set<T> left_set,const std::set<T> right_set);
 
   public:
     TSHwithPR();
@@ -21,7 +17,7 @@ class TSHwithPR : public MCCPP {
     // メイン探索
     class Greedy {
       public:
-        static ColorSet CriticalOneMoveNeighborhood(ColorSet target_color_set);         // feasible search
+        static std::tuple<std::set<int>,bool,ColorSet> CriticalOneMoveNeighborhood(ColorSet target_color_set);         // feasible search
         static void ReassignLargestCardinality(double RF); // solution_improvement
     };
     class LocalSearch {
@@ -44,6 +40,7 @@ class TSHwithPR : public MCCPP {
         static bool EliteSetHaveElement(std::vector<ColorSet> target_elite,ColorSet target_color_set);
     };
     // その他機能
+    static void ResetData();
     static void Run();
     static ColorSet Result();
     //test関数。あとで消す

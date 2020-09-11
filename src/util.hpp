@@ -15,19 +15,30 @@
 struct ColorClass {
     std::string color;
     std::set<int> vertexes;
-    float weight;
+    long long weight;
     bool operator< (const ColorClass &another_color_class) const;
     bool operator> (const ColorClass &another_color_class) const;
 };
-
+// ColorSet内の関数でないと中身を変更できない仕様にする(カプセル化する)
 struct ColorSet {
+  private:
     std::vector<ColorClass> S;
-    std::map<int,int> search_color; //vartex number,color number 
+    std::map<int, int> search_color; // vartex number,color number
+  public:
     int num_color;
-    float score;
-    bool operator< (const ColorSet &another_color_set) const;
-    bool operator> (const ColorSet &another_color_set) const;
-    bool operator== (const ColorSet &another_color_set) const;
+    long long score;
+    bool operator<(const ColorSet &another_color_set) const;
+    bool operator>(const ColorSet &another_color_set) const;
+    bool operator==(const ColorSet &another_color_set) const;
+    void operator=(const ColorSet &copy_color_set);
+    std::vector<ColorClass> GetColorSet();
+    std::map< int, int > GetSearchColor();
+    void GreaterSort();
+    void MoveVertexColor( int pre_vertex,int after_color );
+    void InitColorSet(const ColorSet copy_color_set);
+    void InitColorSet(const std::vector<ColorClass> copy_color_set);
+    void SortColorWeight();
+    void ShowColor(int pre_color,int vertex);
 };
 
 struct VertexMove {
