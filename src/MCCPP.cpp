@@ -1,5 +1,5 @@
-#include "TSHwithPR.hpp"
-#include "util.hpp"
+#include "../include/MCCPP.hpp"
+#include "../include/util.hpp"
 using namespace std;
 
 ColorSet MCCPP::current_color;

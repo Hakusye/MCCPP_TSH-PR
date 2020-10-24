@@ -1,4 +1,4 @@
-#include "util.hpp"
+#include "../include/util.hpp"
 
 using namespace std;
 //weightはあえて符号逆(頂点数は多い方が、重みは小さい方が良いものなので)

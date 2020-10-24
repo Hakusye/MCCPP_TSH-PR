@@ -1,5 +1,4 @@
-#include "TSHwithPR.hpp"
-#include "util.hpp"
+#include "../include/TSHwithPR.hpp"
 using namespace std;
 
 //staticに実体をもたせた
@@ -19,22 +18,6 @@ TSHwithPR::~TSHwithPR() {
 
 };
 
-//テストクリア(テストケース... _Reassign2SmallerOneTest)
-/*
-ColorSet TSHwithPR::SortColorWeight(ColorSet color_set) {
-    vector<long long> color_weight;
-    vector<ColorClass> target_color = color_set.GetColorSet();
-    for( int i=0; i < target_color.size(); i++) {
-        color_weight.push_back( target_color[i].weight );
-    }
-    sort(color_weight.begin(),color_weight.end());
-    color_set.GreaterSort();
-    for( int i=0; i < target_color.size(); i++ ) {
-        color_set.S[i].weight = color_weight[i];
-    }
-    return color_set;
-}
-*/
 //テストクリア(テストケース.. _Reassigntest) ただし、tabulist追加してない
 // 1回の実行につきひとつの衝突をなくす。1つ1つの動作はbast solutionを選ぶ
 tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(ColorSet target_color_set) {
@@ -138,7 +121,7 @@ ColorSet TSHwithPR::LocalSearch::Reassign2SmallerOne( ColorSet color_set ) {
 }
 //どんな色分けになるかのカラーセット(評価関数はおかしいまま),どの頂点を移動すれば良いかを返す
 //テストクリア(テストケース... _CalcMoveDistanceTest) : バグ残っててもおかしくないのでcerrは残す
-pair<ColorSet,set<int>> TSHwithPR::PathRelinkng::CalcMoveDistance(ColorSet initial_set,ColorSet guiding_set) {
+pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(ColorSet initial_set,ColorSet guiding_set) {
     //論文通りの方が確実なのでやる。
     ColorSet ans_set;
     ans_set = initial_set;
@@ -191,7 +174,7 @@ pair<ColorSet,set<int>> TSHwithPR::PathRelinkng::CalcMoveDistance(ColorSet initi
     return { ans_set, move_vertexes };
 }
 
-ColorSet TSHwithPR::PathRelinkng::PathRelinking(ColorSet initial_S,ColorSet guiding_S,ColorSet goal_S,set<int> move_vertexes) {
+ColorSet TSHwithPR::PathRelinking::CalcPathRelinking(ColorSet initial_S,ColorSet goal_S,set<int> move_vertexes) {
     ColorSet path_S = initial_S;
     ColorSet ans_color_set = initial_S;
     while(!move_vertexes.empty()) {
@@ -301,9 +284,11 @@ void TSHwithPR::Run() {
         EliteSetUpdate::PriorHighScore( current_color );
         ColorSet Sguiding = elite_set[mt() % elite_set.size()];
         if(elite_set.size() < 2) continue;
-        auto [ Sgoal, move_vertexes ] = PathRelinkng::CalcMoveDistance ( current_color,Sguiding );
+        auto [ Sgoal, move_vertexes ] = PathRelinking::CalcMoveDistance ( current_color,Sguiding );
         if(move_vertexes.size() < 2) continue;
-        current_color = PathRelinkng::PathRelinking( current_color, Sguiding , Sgoal ,move_vertexes );
+        current_color = PathRelinking::CalcPathRelinking( current_color,  Sgoal ,move_vertexes );
+        //PathRelinking::BeamSearch::NodeSearch(current_color, Sgoal , move_vertexes );
+        //current_color = PathRelinking::BeamSearch::Output();
         current_color = LocalSearch::Reassign2SmallerOne( current_color );
         EliteSetUpdate::PriorHighScore( current_color );
         current_color = Perturbation::SetRandomColor( current_color,sqrt( graph.size() ) );
@@ -326,6 +311,7 @@ void TSHwithPR::_LargestAdjacentTest() {
     for(int vertex : max_adjacent_set) {
         cout << vertex << " ";
     }
+//テストクリア(テストケース... _Reassign2SmallerOneTest)
     cout << endl;
 }
 void TSHwithPR::_RemoveSet2SetTest() {
@@ -345,6 +331,7 @@ void TSHwithPR::_MoveVertexColorTest() {
     cs.S.resize(10);
     for(int i=0;i<20;i++) {
         cs = MoveVertexColor( cs, i, i%5 );
+//テストクリア(テストケース... _Reassign2SmallerOneTest)
     }
     _ShowColorSet(cs);
     for(int i=0;i<5;i++) { 

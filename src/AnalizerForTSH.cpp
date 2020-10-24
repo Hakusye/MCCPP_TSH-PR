@@ -1,5 +1,5 @@
-#include "AnalizerForTSH.hpp"
-#include "util.hpp"
+#include "../include/AnalizerForTSH.hpp"
+#include "../include/util.hpp"
 using namespace std;
 //保存したファイルをグラフィックで出力:
 void AnalizerForTSH::ShowLearningCurve() {
@@ -25,7 +25,7 @@ tuple<double,long long, long long> AnalizerForTSH::CalcDistanceAndScoreInEliteSe
     for( int i = 0; i < elite_set.size(); i++ ) {
         cout << elite_set[i].score << " ";
         for( int j = i+1; j < elite_set.size(); j++ ) {
-            auto [ tmp,score ] = PathRelinkng::CalcMoveDistance(elite_set[i],elite_set[j]);
+            auto [ tmp,score ] = PathRelinking::CalcMoveDistance(elite_set[i],elite_set[j]);
             distance_average += score.size();
         }
         best_score = min( best_score,elite_set[i].score );
@@ -60,7 +60,9 @@ void AnalizerForTSH::Analize() {
 void AnalizerForTSH::Input4Train() {
     InputGraph();
     InputColorSet();
+    clock_t start = clock();
     Train("log/test.score");
+    cout << "total time:" << clock() - start << endl;
 }
 
 void AnalizerForTSH::Input4Train(string graph_name ,string color_name,string log_name = "log/test.score") {
@@ -112,14 +114,19 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             continue;
         }
         clock_t local_search_time = clock();
-        auto [ Sgoal, move_vertexes ] = PathRelinkng::CalcMoveDistance ( current_color,Sguiding );
+        auto [ Sgoal, move_vertexes ] = PathRelinking::CalcMoveDistance ( current_color,Sguiding );
         clock_t  move_distance_time = clock();
         if(move_vertexes.size() >= 3) {
-            cout << num << endl;
+            cout << "iterator:"<< num << endl;
             //cout  << move_vertexes.size() << endl;
 
-            current_color = PathRelinkng::PathRelinking( current_color, Sguiding , Sgoal ,move_vertexes );
+            //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
+            //cout << "before output" << endl;
+            current_color = PathRelinking::BeamSearch::Output( ); 
+            //cout << "after output" << endl;
             current_color = LocalSearch::Reassign2SmallerOne( current_color );
+            //cout << "smallerone" << endl;
             EliteSetUpdate::PriorHighScore( current_color );
         }
         clock_t path_relink_time = clock();

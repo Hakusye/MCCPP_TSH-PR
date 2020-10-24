@@ -1,8 +1,8 @@
 #include <iostream>
-#include "../src/TSHwithPR.hpp"
-#include "../src/util.hpp"
-#include "../src/FullSearch.hpp"
-#include "../src/AnalizerForTSH.hpp"
+#include "../include/TSHwithPR.hpp"
+#include "../include/util.hpp"
+#include "../include/FullSearch.hpp"
+#include "../include/AnalizerForTSH.hpp"
 using namespace std;
 
 int main(){
@@ -12,4 +12,5 @@ int main(){
     test.Input4Train();
     //test._MoveVertexColorTest();
     //test._RemoveSet2SetTest();
+    //test.Run();
 }
