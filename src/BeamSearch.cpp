@@ -19,7 +19,6 @@ void TSHwithPR::PathRelinking::BeamSearch::NodeSearch(ColorSet initial_S,ColorSe
         used_check.append("0");
         clear_check.append("1");
     }
-    cout << "start" << endl;
     for( int vertex : move_vertexes ) {
         UpdateDP( initial_S, vertex, goal_S.GetSearchColor()[vertex] , 0, used_check ,move_vertexes);
     }

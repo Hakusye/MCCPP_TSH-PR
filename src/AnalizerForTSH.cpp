@@ -120,10 +120,10 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             cout << "iterator:"<< num << endl;
             //cout  << move_vertexes.size() << endl;
 
-            //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
             PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
-            //cout << "before output" << endl;
-            current_color = PathRelinking::BeamSearch::Output( ); 
+            current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            //current_color = PathRelinking::BeamSearch::Output( ); 
+            cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
             //cout << "after output" << endl;
             current_color = LocalSearch::Reassign2SmallerOne( current_color );
             //cout << "smallerone" << endl;
@@ -134,11 +134,11 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
         //current_color = Perturbation::SetRandomColor( current_color,30 );
         if( num % 10 == 9 ) {
             SaveLearningCurve(num/5,log_name);
-            cout << "greedy:" << greedy_time - iter_time << endl;
-            cout << "improve_comflict:" <<  conflict_time - greedy_time << endl;
-            cout << "local_search:" << local_search_time - conflict_time << endl;
-            cout << "move distance:" << move_distance_time - local_search_time << endl;
-            cout << "path relinking:" << path_relink_time - move_distance_time << endl;
+            //cout << "greedy:" << greedy_time - iter_time << endl;
+            //cout << "improve_comflict:" <<  conflict_time - greedy_time << endl;
+            //cout << "local_search:" << local_search_time - conflict_time << endl;
+            //cout << "move distance:" << move_distance_time - local_search_time << endl;
+            //cout << "path relinking:" << path_relink_time - move_distance_time << endl;
         }
         iter_time = clock();
     }while( num != 50 );

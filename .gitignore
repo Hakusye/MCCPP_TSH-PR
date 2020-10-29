@@ -3,3 +3,4 @@ binformat/*
 obj/*
 run
 log/*
+.vscode

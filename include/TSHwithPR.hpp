@@ -66,7 +66,7 @@ class TSHwithPR::EliteSetUpdate {
 class TSHwithPR::PathRelinking::BeamSearch {
   private:
     const static int BEAM_WIDTH = 5;
-    const static int KEEP_NUM = 5;
+    const static int KEEP_NUM = 10;
     static std::vector< std::map < std::string ,ColorSet >> DP;
     static std::set< std::pair<long long ,std::string >> sort_score_DP;
     static ColorSet optimal_colorset;

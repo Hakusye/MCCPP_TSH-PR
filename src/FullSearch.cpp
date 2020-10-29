@@ -2,9 +2,9 @@
 #include <queue>
 #include <vector>
 #include <utility>
-#include "util.hpp"
-#include "MCCPP.hpp"
-#include "FullSearch.hpp"
+#include "../include/util.hpp"
+#include "../include/MCCPP.hpp"
+#include "../include/FullSearch.hpp"
 
 using namespace std;
 //完成
