@@ -11,7 +11,7 @@ ColorSet TSHwithPR::PathRelinking::BeamSearch::Output() {
 }; 
 
 //ビームサーチ全体の操作
-void TSHwithPR::PathRelinking::BeamSearch::NodeSearch(ColorSet initial_S,ColorSet goal_S,set<int> move_vertexes) {
+void TSHwithPR::PathRelinking::BeamSearch::NodeSearch(const ColorSet &initial_S,const ColorSet &goal_S,const set<int> &move_vertexes) {
     InitBeamSearch(initial_S);
     string used_check = "";
     string clear_check = "";

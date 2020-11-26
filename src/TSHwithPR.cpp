@@ -20,11 +20,16 @@ TSHwithPR::~TSHwithPR() {
 
 //テストクリア(テストケース.. _Reassigntest) ただし、tabulist追加してない
 // 1回の実行につきひとつの衝突をなくす。1つ1つの動作はbast solutionを選ぶ
-tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(ColorSet target_color_set) {
+tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(const ColorSet &target_color_set) {
     //衝突頂点ををループ(入力として与えておく?)
     //すべての衝突頂点に衝突を無くせる色に変える全探索をして一番よかったやつにする
     //まだtabulistを組み込んでいない
     ColorSet ans_color_set = target_color_set;
+    //最終結果記録。念の為に0頂点の色を記録(変更なしのときに書き換えが行われないように)
+    bool increase_num_color = false;
+    int ans_score = target_color_set.score;
+    int change_vertex = 0;
+    int change_color = target_color_set.GetSearchColor()[0];
     //衝突セットつくる
     set<int> conflict_set;
     vector<ColorClass> target_color_classes = target_color_set.GetColorSet();
@@ -37,7 +42,6 @@ tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(Col
         return { conflict_set,false, target_color_set };
     }
     for (int vertex : conflict_set) {
-        ColorSet tmp_color_set = target_color_set;
         int current_color = target_color_set.GetSearchColor()[vertex];
         long long tmp_score;
         for ( int color = 0; color <= target_color_set.num_color; color++) {
@@ -45,16 +49,20 @@ tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(Col
             //次に変える予定の色と隣接していないものをえらぶ
             set<int> adjacent_set = AdjacentColorSet(target_color_set.GetColorSet()[color].vertexes,vertex);
             if(!adjacent_set.empty()) continue;
-            tmp_score = DiffEvalFunction(tmp_color_set,vertex,color);
-            if(ans_color_set.score > tmp_score) { //tabulist弾くのも書く必要ある
-                ans_color_set = tmp_color_set;
-                ans_color_set.score = tmp_score;
-                if(color == target_color_set.num_color) ans_color_set.num_color++;
-                ans_color_set.MoveVertexColor(vertex,color);
+            tmp_score = DiffEvalFunction(target_color_set,vertex,color);
+            if(ans_score > tmp_score) { //tabulist弾くのも書く必要ある
+                change_vertex = vertex;
+                change_color = color;
+                ans_score = tmp_score;
+                if(color == target_color_set.num_color) increase_num_color = true;
+                else increase_num_color = false;
             }
         }
     }
-    return { conflict_set,true, ans_color_set };
+    ans_color_set.score = ans_score;
+    ans_color_set.MoveVertexColor(change_vertex,change_color);
+    if(increase_num_color) ans_color_set.num_color++;
+    return { conflict_set, true, ans_color_set };
 }
 //バグ発見 <- 対処済み
 //多分完璧(RF=1.0で完全な貪欲ができる)
@@ -121,7 +129,7 @@ ColorSet TSHwithPR::LocalSearch::Reassign2SmallerOne( ColorSet color_set ) {
 }
 //どんな色分けになるかのカラーセット(評価関数はおかしいまま),どの頂点を移動すれば良いかを返す
 //テストクリア(テストケース... _CalcMoveDistanceTest) : バグ残っててもおかしくないのでcerrは残す
-pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(ColorSet initial_set,ColorSet guiding_set) {
+pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(const ColorSet &initial_set,ColorSet guiding_set) {
     //論文通りの方が確実なのでやる。
     ColorSet ans_set;
     ans_set = initial_set;
@@ -174,7 +182,7 @@ pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(ColorSet init
     return { ans_set, move_vertexes };
 }
 
-ColorSet TSHwithPR::PathRelinking::CalcPathRelinking(ColorSet initial_S,ColorSet goal_S,set<int> move_vertexes) {
+ColorSet TSHwithPR::PathRelinking::CalcPathRelinking(const ColorSet &initial_S,const ColorSet &goal_S,set<int> move_vertexes) {
     ColorSet path_S = initial_S;
     ColorSet ans_color_set = initial_S;
     while(!move_vertexes.empty()) {
@@ -223,10 +231,10 @@ ColorSet TSHwithPR::Perturbation::SetRandomColor(ColorSet target_color_set,int m
     return target_color_set;
 }
 //テストクリア(テストケース... _EliteSetUpdateTest)
-void TSHwithPR::EliteSetUpdate::PriorHighScore(ColorSet target_color_set) {
+void TSHwithPR::EliteSetUpdate::PriorHighScore(const ColorSet &target_color_set) {
     //elite setにかぶりがあるなら更新しない
     if( EliteSetHaveElement(elite_set,target_color_set) ) return;
-    target_color_set.score = EvalFunction( target_color_set );
+    //target_color_set.score = EvalFunction( target_color_set );
     if(elite_set.size() < elite_max_size) { 
         elite_set.push_back(target_color_set);
         return;
@@ -242,9 +250,9 @@ void TSHwithPR::EliteSetUpdate::PriorHighScore(ColorSet target_color_set) {
     if( warst_score > target_color_set.score ) elite_set[warst_pnt] = target_color_set;
 }
 
-bool TSHwithPR::EliteSetUpdate::EliteSetHaveElement(vector<ColorSet> target_elite,ColorSet target_color_set) {
-    for(ColorSet color_set : target_elite) {
-        if(color_set == target_color_set) return true;
+bool TSHwithPR::EliteSetUpdate::EliteSetHaveElement(const vector<ColorSet> &target_elite,const ColorSet &target_color_set) {
+    for(int i = 0;i < target_elite.size();i++) {
+        if(target_elite[i] == target_color_set) return true;
     }
     return false;
 }

@@ -4,7 +4,7 @@ using namespace std;
 
 ColorSet MCCPP::current_color;
 ColorSet MCCPP::reset_color;
-//まだ
+//win10だと実行の度に同じ乱数になるバグが発生
 MCCPP::MCCPP() {
     mt.seed(rd());
 }
@@ -13,7 +13,7 @@ MCCPP::~MCCPP() {
 
 }
 //テストクリア(ほぼ確実に正しい)
-long long MCCPP::EvalFunction(ColorSet color_set) {
+long long MCCPP::EvalFunction(const ColorSet &color_set) {
     float sum = 0;
     vector<ColorClass> target_color_class = color_set.GetColorSet();
     for(ColorClass target : target_color_class) {
@@ -41,7 +41,7 @@ void MCCPP::_ShowGraph() {
     }
 }
 
-void MCCPP::_ShowColorSet(ColorSet color_set) {
+void MCCPP::_ShowColorSet(const ColorSet &color_set) {
     cout << "score:" << color_set.score  << endl;
     vector<ColorClass> target_color_class = color_set.GetColorSet();
     for(ColorClass color_class : target_color_class) {
@@ -70,7 +70,7 @@ void MCCPP::InputGraph() {
     InitGraph(inputfile);
 }
 
-void MCCPP::InputGraph(string filename) {
+void MCCPP::InputGraph(const string &filename) {
     ifstream inputfile;
     inputfile.open(filename);
     if(inputfile.fail()) {
@@ -115,7 +115,7 @@ void MCCPP::InputColorSet() {
     InitColorSet(inputfile);
 }
 
-void MCCPP::InputColorSet(string filename) {
+void MCCPP::InputColorSet(const string &filename) {
     ifstream inputfile;
     inputfile.open(filename);
     if(inputfile.fail()) {
@@ -138,7 +138,7 @@ void MCCPP::InitColorSet(ifstream& inputfile) {
 }
 
 //テストクリア(テストケース..._LargestAdjacentTest)
-pair<int, set<int>> MCCPP::LargestAdjacentVertexInSet(const set<int> candidate_set,const set<int> graph_sub_set) {
+pair<int, set<int>> MCCPP::LargestAdjacentVertexInSet(const set<int> &candidate_set,const set<int> &graph_sub_set) {
     set<int> max_adjacent_set = {};
     int max_vertex = -1; int max_adjacent = -1;
     // uncolord_setの中でUともっとも隣接している頂点を選択
@@ -154,7 +154,7 @@ pair<int, set<int>> MCCPP::LargestAdjacentVertexInSet(const set<int> candidate_s
     return {max_vertex , max_adjacent_set};
 }
 
-set<int> MCCPP::OldAdjacentColorSet(set<int> vertexes_set,int target_vertex) {
+set<int> MCCPP::OldAdjacentColorSet(const set<int> &vertexes_set,const int &target_vertex) {
     vector<int> g_adjasent_set = graph[target_vertex];//頂点vertexの隣合う頂点はグラフから確認できる
     set<int> ans_set;
     for (int vertex : g_adjasent_set) {
@@ -164,14 +164,14 @@ set<int> MCCPP::OldAdjacentColorSet(set<int> vertexes_set,int target_vertex) {
     return ans_set;
 }
 //今だけNewAdjacentColorSetを入れ替え
-set<int> MCCPP::AdjacentColorSet(set<int> vertexes_set,int target_vertex) {
+set<int> MCCPP::AdjacentColorSet(const set<int> &vertexes_set,const int &target_vertex) {
     vector<int> g_adjasent_set = graph[target_vertex];//頂点vertexの隣合う頂点はグラフから確認できる
     set<int> tmp_set(g_adjasent_set.begin(),g_adjasent_set.end());
     return IntersectionSet2Set(vertexes_set,tmp_set);
 }
 
 //テストクリア(テストケース... _ReassignLargestCardinality )
-long long MCCPP::DiffEvalFunction(ColorSet color_set,int change_vertex,int after_color) {
+long long MCCPP::DiffEvalFunction(const ColorSet &color_set,const int &change_vertex,const int &after_color) {
     long long ans = color_set.score;
     int pre_color = color_set.GetSearchColor().at(change_vertex);
     vector<ColorClass> target_color_class =  color_set.GetColorSet();
@@ -187,7 +187,7 @@ long long MCCPP::DiffEvalFunction(ColorSet color_set,int change_vertex,int after
 }
 
 //テストクリア(テストケース... _RemoveSetTest)
-set<int> MCCPP::RemoveSet2Set(set<int> main_set,const set<int> remove_set) {
+set<int> MCCPP::RemoveSet2Set(set<int> main_set,const set<int> &remove_set) {
     for ( int remove_element : remove_set) {
         if( main_set.find(remove_element) != main_set.end() ) main_set.erase( remove_element );
     }

@@ -78,11 +78,11 @@ vector<int> shuffle(vector<int> target,mt19937 random_device) {
     return target;
 }
 
-inline vector<ColorClass> ColorSet::GetColorSet() {
+inline vector<ColorClass> ColorSet::GetColorSet() const {
     return S;
 }
 
-inline map< int, int > ColorSet::GetSearchColor() {
+inline map< int, int > ColorSet::GetSearchColor() const {
     return search_color;
 }
 

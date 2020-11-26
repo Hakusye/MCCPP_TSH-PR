@@ -141,7 +141,7 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             //cout << "path relinking:" << path_relink_time - move_distance_time << endl;
         }
         iter_time = clock();
-    }while( num != 50 );
+    }while( num != 20 );
     cout << "結果" << endl;
     // floatによって桁起してるから最後にしっかり調整する -> long long にした
     //current_color.score = EvalFunction(current_color);

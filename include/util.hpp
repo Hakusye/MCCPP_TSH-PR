@@ -22,17 +22,20 @@ struct ColorClass {
 // ColorSet内の関数でないと中身を変更できない仕様にする(カプセル化する)
 struct ColorSet {
   private:
+    //std::vector<ColorClass> S;
+    //std::map<int, int> search_color; // vartex number,color number
+  public:
+  // 普段はprivate
     std::vector<ColorClass> S;
     std::map<int, int> search_color; // vartex number,color number
-  public:
     int num_color;
     long long score;
     bool operator<(const ColorSet &another_color_set) const;
     bool operator>(const ColorSet &another_color_set) const;
     bool operator==(const ColorSet &another_color_set) const;
     void operator=(const ColorSet &copy_color_set);
-    std::vector<ColorClass> GetColorSet();
-    std::map< int, int > GetSearchColor();
+    std::vector<ColorClass> GetColorSet() const;
+    std::map< int, int > GetSearchColor() const;
     void GreaterSort();
     void MoveVertexColor( int pre_vertex,int after_color );
     void InitColorSet(const ColorSet copy_color_set);

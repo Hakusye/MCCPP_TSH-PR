@@ -1,6 +1,6 @@
 CXX := g++
 CFLAGS := -std=c++17
-OBJS = obj/main.o obj/TSHwithPR.o obj/MCCPP.o obj/FullSearch.o obj/util.o obj/AnalizerForTSH.o obj/BeamSearch.o
+OBJS = obj/main.o obj/TSHwithPR.o obj/MCCPP.o obj/FullSearch.o obj/util.o obj/AnalizerForTSH.o obj/BeamSearch.o obj/DAG.o
 
 main: $(OBJS)
 	$(CXX) $(CFLAGS) -o run $(OBJS)
@@ -13,6 +13,9 @@ obj/AnalizerForTSH.o: src/AnalizerForTSH.cpp
 
 obj/BeamSearch.o: src/BeamSearch.cpp
 	$(CXX) $(CFLAGS) -c src/BeamSearch.cpp -o obj/BeamSearch.o
+
+obj/DAG.o : src/DAG.cpp
+	$(CXX) $(CFLAGS) -c src/DAG.cpp -o obj/DAG.o
 
 obj/TSHwithPR.o: src/TSHwithPR.cpp
 	$(CXX) $(CFLAGS) -c src/TSHwithPR.cpp -o obj/TSHwithPR.o

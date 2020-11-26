@@ -23,7 +23,7 @@ class TSHwithPR : public MCCPP {
     static void ResetData();
     static void Run();
     static ColorSet Result();
-    //test関数。あとで消す
+    //test用。消しても問題ない
     static void _LargestAdjacentTest();
     static void _RemoveSet2SetTest();
     static void _MoveVertexColorTest();
@@ -35,7 +35,7 @@ class TSHwithPR : public MCCPP {
 
 class TSHwithPR::Greedy {
   public:
-    static std::tuple<std::set<int>,bool,ColorSet> CriticalOneMoveNeighborhood(ColorSet target_color_set);         // feasible search
+    static std::tuple<std::set<int>,bool,ColorSet> CriticalOneMoveNeighborhood(const ColorSet &target_color_set);         // feasible search
     static void ReassignLargestCardinality(double RF); // solution_improvement
 };
 
@@ -46,9 +46,10 @@ class TSHwithPR::LocalSearch {
 
 class TSHwithPR::PathRelinking {
   public:
-    static std::pair<ColorSet,std::set<int>> CalcMoveDistance(ColorSet initial_S,ColorSet guiding_S);
-    static ColorSet CalcPathRelinking(ColorSet initial_S,ColorSet goal_S,std::set<int> move_vertex);
+    static std::pair<ColorSet,std::set<int>> CalcMoveDistance(const ColorSet &initial_S,ColorSet guiding_S);
+    static ColorSet CalcPathRelinking(const ColorSet &initial_S,const ColorSet &goal_S,std::set<int> move_vertex);
     class BeamSearch; //内部クラスの内部クラス
+    class DAG;
 }; 
 
 class TSHwithPR::Perturbation {
@@ -59,8 +60,8 @@ class TSHwithPR::Perturbation {
 
 class TSHwithPR::EliteSetUpdate {
   public:
-    static void PriorHighScore(ColorSet target_color_set);
-    static bool EliteSetHaveElement(std::vector<ColorSet> target_elite,ColorSet target_color_set);
+    static void PriorHighScore(const ColorSet &target_color_set);
+    static bool EliteSetHaveElement(const std::vector<ColorSet> &target_elite,const ColorSet &target_color_set);
 };
 
 class TSHwithPR::PathRelinking::BeamSearch {
@@ -74,9 +75,26 @@ class TSHwithPR::PathRelinking::BeamSearch {
     //この仕様(unsigned long long)だと距離64までしか計算できないため、stringで行う
   public:
     static ColorSet Output();
-    static void NodeSearch(ColorSet initial_set,ColorSet goal_S,std::set<int> move_vertexes);
+    static void NodeSearch(const ColorSet &initial_set,const ColorSet &goal_S,const std::set<int> &move_vertexes);
     static void BranchCut();
     static void UpdateDP(ColorSet original_set,int change_vertex, int change_color,int num_dp, std::string used_check ,const std::set<int> &move_vertexes);
     static void InitBeamSearch(const ColorSet &colorset);
     //evalはMCCPPのを一旦使用することにする
+};
+//色分けグラフを有向パスに書き直す処理とデータを保持する枠が必要
+class TSHwithPR::PathRelinking::DAG {
+  private:
+    static std::vector<std::vector<int>> dag_graph;
+    static std::vector<int> dag_weight;
+
+  public:
+  //便宜上、move_vertexes順に0,1,2,..方式で頂点を保存する。move_vertexes[数字]で、元の頂点番号を復元できる
+    static std::vector<std::vector<int>> MakeUndirectedGraph( const std::vector<int> &move_vertexes );
+    static std::vector<std::vector<int>> MakeDirectedGraph(const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set);
+    struct StronglyConnectedComponents;
+    static std::vector<int> MakeDagWeight(const StronglyConnectedComponents &SCC,const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set); //その頂点集合の色を変更した場合のスコア増減の記録
+    static void Build(const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set);
+    //test用
+    void _test1();
+    void _test2();
 };
