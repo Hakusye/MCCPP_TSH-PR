@@ -6,10 +6,10 @@
 using namespace std;
 
 int main(){
-    TSHwithPR::PathRelinking::DAG test;
-    //AnalizerForTSH test;
+    //TSHwithPR::PathRelinking::DAG test;
+    AnalizerForTSH test;
     //TSHwithPR test;
     //test.Analize();
-    test._test2();
-    //test.Input4Train();
+    //test._test2();
+    test.Input4Train();
 }

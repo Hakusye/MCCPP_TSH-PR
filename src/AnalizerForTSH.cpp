@@ -118,15 +118,23 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
         clock_t  move_distance_time = clock();
         if(move_vertexes.size() >= 3) {
             cout << "iterator:"<< num << endl;
-            //cout  << move_vertexes.size() << endl;
-
-            PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
-            current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            // path_relinking周り
+            //PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
+            //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            vector<int> move_vertexes_vec( move_vertexes.begin(),move_vertexes.end() );
+            
+            TSHwithPR::PathRelinking::DAG::Build(move_vertexes_vec ,current_color ,Sgoal);
+            vector<int> change_vertexes = TSHwithPR::PathRelinking::DAG::CalcChangesVertexes( move_vertexes_vec );
+            for( int v : change_vertexes ) {
+                current_color.MoveVertexColor( v , Sgoal.search_color[v] );
+                current_color.score = DiffEvalFunction(current_color, v, Sgoal.search_color[v]);
+            } 
+            
+            //current_color.score = EvalFunction(current_color);
+            //事後処理
             //current_color = PathRelinking::BeamSearch::Output( ); 
-            cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
-            //cout << "after output" << endl;
+            //cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
             current_color = LocalSearch::Reassign2SmallerOne( current_color );
-            //cout << "smallerone" << endl;
             EliteSetUpdate::PriorHighScore( current_color );
         }
         clock_t path_relink_time = clock();
@@ -141,7 +149,7 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             //cout << "path relinking:" << path_relink_time - move_distance_time << endl;
         }
         iter_time = clock();
-    }while( num != 20 );
+    }while( num != 40 );
     cout << "結果" << endl;
     // floatによって桁起してるから最後にしっかり調整する -> long long にした
     //current_color.score = EvalFunction(current_color);

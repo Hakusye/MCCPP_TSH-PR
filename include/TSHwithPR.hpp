@@ -85,6 +85,8 @@ class TSHwithPR::PathRelinking::BeamSearch {
 class TSHwithPR::PathRelinking::DAG {
   private:
     static std::vector<std::vector<int>> dag_graph;
+    static std::vector<std::vector<int>> reverse_dag_graph; //逆向きの有向グラフ.逆向きに参照したい時に使う
+    static std::vector<std::vector<int>> dag2original_vertexes;//dagの頂点から元の有向グラフ時の頂点番号を引き出すやつ
     static std::vector<int> dag_weight;
 
   public:
@@ -93,7 +95,14 @@ class TSHwithPR::PathRelinking::DAG {
     static std::vector<std::vector<int>> MakeDirectedGraph(const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set);
     struct StronglyConnectedComponents;
     static std::vector<int> MakeDagWeight(const StronglyConnectedComponents &SCC,const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set); //その頂点集合の色を変更した場合のスコア増減の記録
+    static std::vector<std::vector<int>> MakeDag2OriginalVertexes(const StronglyConnectedComponents &SCC,const std::vector<int> &move_vertexes);
+    static void MakeReverseDagGraph();
     static void Build(const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set);
+    // 色変するかしないかのbool。move_vertexesの配列番号順に返す。
+    static std::vector<bool> DagGreedy();
+    //色変する頂点集合を元のグラフの頂点番号で出力
+    static std::vector<int> CalcChangesVertexes( const std::vector<int> &move_vertexes );
+    //推移閉包も作る。(それ自体が良い結果は産まないので(DagGreedyに負ける)本論のみに記載するかも)
     //test用
     void _test1();
     void _test2();
