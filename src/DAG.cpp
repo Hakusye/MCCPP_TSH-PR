@@ -134,9 +134,9 @@ void TSHwithPR::PathRelinking::DAG::Build( const vector<int> &move_vertexes, con
 }
 //未テスト
 vector<bool> TSHwithPR::PathRelinking::DAG::DagGreedy() {
-    vector<bool> answer(dag_graph.size(),false); //非確定のものはfalseでok
+    vector<bool> answer( dag_graph.size(),false ); //非確定のものはfalseでok
     queue<int> leaf; //出し入れ楽そうだから。queueじゃなくてもいける
-    vector<int> set_vertexes(dag_graph.size()); //1つにまとめた頂点を記録しておく(親に子を記録)
+    vector<int> set_vertexes( dag_graph.size() ); //1つにまとめた頂点を記録しておく(親に子を記録)
     
     vector<vector<int>> tmp_dag = dag_graph;
     //vector<vector<int>> tmp_rev_dag = reverse_dag_graph;
@@ -156,7 +156,7 @@ vector<bool> TSHwithPR::PathRelinking::DAG::DagGreedy() {
                 if( tmp_dag[l].empty() ) leaf.push(l); ///消した結果emptyなら葉
             }
         } else { //確定しない時の処理
-        //ここでは親の数で割った値をすべての親に足し込む(正確ではないが、すべて使う場合に受ける数値を記録)
+        //ここでは親の数で割った値をすべての親に足し込む(正確さはないが、すべて使う場合に受ける数値を記録)
         //上の根に登るほど影響をうけないため、うまくいってほしい
             int num_parent = reverse_dag_graph.size(); //親の数
             for( int l : reverse_dag_graph[v] ) {
@@ -178,7 +178,7 @@ vector<int> TSHwithPR::PathRelinking::DAG::CalcChangesVertexes( const vector<int
     for( int v = 0; v < dag_changes_vertexes.size(); v++ ) {
         if ( !dag_changes_vertexes[v] )  continue;
         for( int l : dag2original_vertexes[v] ) { //dagの頂点 -> 有向グラフに戻した時の頂点集合
-            answer.emplace_back( move_vertexes[l]); //有向グラフの頂点番号->元のグラフの頂点番号
+            answer.emplace_back( move_vertexes[l] ); //有向グラフの頂点番号->元のグラフの頂点番号
         }
     } 
     return answer;

@@ -116,20 +116,21 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
         clock_t local_search_time = clock();
         auto [ Sgoal, move_vertexes ] = PathRelinking::CalcMoveDistance ( current_color,Sguiding );
         clock_t  move_distance_time = clock();
-        if(move_vertexes.size() >= 3) {
+        if( move_vertexes.size() >= 3 ) {
             cout << "iterator:"<< num << endl;
             // path_relinking周り
             //PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
-            //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
             vector<int> move_vertexes_vec( move_vertexes.begin(),move_vertexes.end() );
-            
+            //DAGのやつ
+            /* 
             TSHwithPR::PathRelinking::DAG::Build(move_vertexes_vec ,current_color ,Sgoal);
             vector<int> change_vertexes = TSHwithPR::PathRelinking::DAG::CalcChangesVertexes( move_vertexes_vec );
             for( int v : change_vertexes ) {
                 current_color.MoveVertexColor( v , Sgoal.search_color[v] );
                 current_color.score = DiffEvalFunction(current_color, v, Sgoal.search_color[v]);
             } 
-            
+            */
             //current_color.score = EvalFunction(current_color);
             //事後処理
             //current_color = PathRelinking::BeamSearch::Output( ); 
