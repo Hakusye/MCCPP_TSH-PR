@@ -1,0 +1,19 @@
+c 手計算する用
+c
+c FullSearhで最適解がもとまる
+c
+c test_6_max10.datの最適解は下の通り
+c score: 2.1*3+3.4*2+5.9 = 19
+c 0 3 4
+c 1 2
+c 5
+p edge 7 9
+e 1 3
+e 1 6
+e 2 4
+e 2 5
+e 2 6
+e 3 4
+e 3 5
+e 5 6
+e 6 7
