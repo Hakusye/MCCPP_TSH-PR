@@ -4,6 +4,7 @@ vector<vector<int>> TSHwithPR::PathRelinking::DAG::dag_graph;
 vector<int> TSHwithPR::PathRelinking::DAG::dag_weight;
 vector<vector<int>> TSHwithPR::PathRelinking::DAG::reverse_dag_graph; //逆向きの有向グラフ.逆向きに参照したい時に使う
 vector<vector<int>> TSHwithPR::PathRelinking::DAG::dag2original_vertexes;//dagの頂点から元の有向グラフ時の頂点番号を引き出すやつ
+vector<set<int>> TSHwithPR::PathRelinking::DAG::transitive_closure; //推移閉包。アルゴリズムにも使えそうだし、あると便利
 
 struct TSHwithPR::PathRelinking::DAG::StronglyConnectedComponents {
   private:
@@ -89,7 +90,7 @@ std::vector<std::vector<int>> TSHwithPR::PathRelinking::DAG::MakeDirectedGraph(c
             int mv2 = move_vertexes[v2];
             int mv2color = init_search_color[mv2];
             int change_mv1color = guiding_search_color[mv1];
-            //色1をの色変後と、色2の変更前が同じ色なら1 -> 2
+            //色1の色変後と、色2の変更前が同じ色なら1 -> 2
             if( change_mv1color == mv2color)  answer_graph[v1].emplace_back(v2);
         }
     }
@@ -100,9 +101,11 @@ vector<int> TSHwithPR::PathRelinking::DAG::MakeDagWeight(const StronglyConnected
     vector<int> answer_weight(dag_graph.size(),0);
     map<int,int> guiding_color = guiding_set.GetSearchColor();
     map<int,int> init_color = init_set.GetSearchColor();
+    vector<ColorClass> guiding_color_classes = guiding_set.GetColorSet();
+    vector<ColorClass> init_color_classes = init_set.GetColorSet();
     for( int i = 0; i < move_vertexes.size(); i++ ) {
         int mv = move_vertexes[i];
-        int change_score = guiding_set.GetColorSet()[guiding_color[mv]].weight - init_set.GetColorSet()[init_color[mv]].weight;
+        int change_score = guiding_color_classes[guiding_color[mv]].weight - init_color_classes[init_color[mv]].weight;
         answer_weight[SCC[i]] += change_score;
     }
     return answer_weight;
@@ -115,8 +118,9 @@ vector<vector<int>> TSHwithPR::PathRelinking::DAG::MakeDag2OriginalVertexes(cons
     }
     return answer;
 }
-//未テスト
+//テストケース_test2
 void TSHwithPR::PathRelinking::DAG::MakeReverseDagGraph() {
+    reverse_dag_graph.clear();
     reverse_dag_graph.resize(dag_graph.size());
     for( int i = 0; i < dag_graph.size(); i++ ) {
         for( int j : dag_graph[i] ) {
@@ -124,47 +128,91 @@ void TSHwithPR::PathRelinking::DAG::MakeReverseDagGraph() {
         }
     }
 }
+//BFSテスト済み
+void TSHwithPR::PathRelinking::DAG::MakeTransitiveClosure() { //計算量に妥協有り
+    int n = dag_graph.size();
+    //隣接行列
+    transitive_closure.clear();
+    transitive_closure.resize(n);
+    for (int tv= 0; tv < n; tv++ ) {
+        queue<int> child;
+        child.push( tv );
+        while( !child.empty() ) {
+            int v = child.front(); child.pop();
+            for( int m : dag_graph[v] ) {
+                transitive_closure[tv].insert(m);
+                child.push(m);
+            }
+        }
+    }
+}
+/***
+    //warshall_floyd.単にDFS,BFSで事足りる.隣接行列で使いたい時に使う
+void TSHwithPR::PathRelinking::DAG::MakeTransitiveClosure() { //計算量に妥協有り
+    transitive_closure.resize(n, vector<bool>( n , false ));
+    for (int i = 0; i < dag_graph.size(); i++) {
+        for ( int j : dag_graph[i] ) {
+            transitive_closure[i][j] = true; //辺が通っているならtrue
+        }
+    }
+    for( int k = 0; k < n; k++ ) {
+        for ( int i = 0; i < n; i++ ) {
+            for ( int j = 0; j < n; j++ ) {
+                if( transitive_closure[i][k] == false || transitive_closure[k][j] == false ) continue;
+                transitive_closure[i][j] = true;
+            }
+        }
+    }
+}
+***/
+//ランダムテスト完璧合格
 void TSHwithPR::PathRelinking::DAG::Build( const vector<int> &move_vertexes, const ColorSet &init_set, const ColorSet &guiding_set ) {
     vector<vector<int>> directed_graph =  MakeDirectedGraph( move_vertexes , init_set , guiding_set );
     StronglyConnectedComponents SCC( directed_graph );
     dag_graph = SCC.build();
     MakeReverseDagGraph();
+    MakeTransitiveClosure();
     dag_weight = MakeDagWeight( SCC, move_vertexes , init_set , guiding_set );
     dag2original_vertexes = MakeDag2OriginalVertexes( SCC, move_vertexes );
 }
 //未テスト
+//推移閉包を作って、そこと同じになった頂点すべてを確定させる必要あり
+//cntを踏む回数が多いのはおかしい。そこが悪さしてそう
 vector<bool> TSHwithPR::PathRelinking::DAG::DagGreedy() {
     vector<bool> answer( dag_graph.size(),false ); //非確定のものはfalseでok
     queue<int> leaf; //出し入れ楽そうだから。queueじゃなくてもいける
     vector<int> set_vertexes( dag_graph.size() ); //1つにまとめた頂点を記録しておく(親に子を記録)
-    
     vector<vector<int>> tmp_dag = dag_graph;
-    //vector<vector<int>> tmp_rev_dag = reverse_dag_graph;
     vector<int> tmp_dag_weight = dag_weight;
     //もし元のdagグラフの頂点にそこから発の辺が無い場合は葉
     for(int v=0 ; v < tmp_dag.size(); v++) {
-        if( tmp_dag[v].empty() ) leaf.push(v);
+        if( !tmp_dag[v].empty() ) continue;
+        leaf.push(v);
     }
-    //頂点を合体させる操作をうまく書く(むずい)
     //疑似コード通りに書く
     while(!leaf.empty()) {
         int v = leaf.front(); leaf.pop();
-        if ( tmp_dag_weight[v] >= 0) {
+        if ( tmp_dag_weight[v] <= 0) {
             answer[v] = true; //確定
             for( int l  : reverse_dag_graph[v] ) { //親からの枝を消す
-                tmp_dag[l].erase( remove( tmp_dag[l].begin(), tmp_dag[l].end(), v ), tmp_dag[l].end() ); //O(n)だからもう少しマシな書き方したい
+                tmp_dag[l].erase( remove( tmp_dag[l].begin(), tmp_dag[l].end(), v ), tmp_dag[l].end() );
                 if( tmp_dag[l].empty() ) leaf.push(l); ///消した結果emptyなら葉
             }
         } else { //確定しない時の処理
-        //ここでは親の数で割った値をすべての親に足し込む(正確さはないが、すべて使う場合に受ける数値を記録)
-        //上の根に登るほど影響をうけないため、うまくいってほしい
-            int num_parent = reverse_dag_graph.size(); //親の数
+            int num_parent = reverse_dag_graph[v].size(); //親の数
             for( int l : reverse_dag_graph[v] ) {
-                //約四捨五入。小数点にしなかったことの弊害
-                tmp_dag_weight[l] += ( tmp_dag_weight[v] + num_parent/2 ) / num_parent;
-                tmp_dag[l].erase( remove( tmp_dag[l].begin(), tmp_dag[l].end(), v ), tmp_dag[l].end() ); //O(n)だからもう少しマシな書き方したい
+                //小数点切り捨て。floatにしなかったことの弊害
+                tmp_dag_weight[l] += tmp_dag_weight[v]  / num_parent;
+                tmp_dag[l].erase( remove( tmp_dag[l].begin(), tmp_dag[l].end(), v ), tmp_dag[l].end() );
                 if( tmp_dag[l].empty() ) leaf.push(l); ///消した結果emptyなら葉
             } 
+        }
+    }
+    //まとめて色変する頂点を推移閉包の隣接行列でチェック
+    for( int i = 0; i < answer.size(); i++ ) {
+        if( !answer[i] ) continue;
+        for( int j : transitive_closure[i] ) {
+            answer[j] = true;
         }
     }
     //帰り値は元のdag頂点番号で返す
@@ -191,6 +239,7 @@ void TSHwithPR::PathRelinking::DAG::_test2() {
     Sinitial = init_color;
     Sguiding = init_color;
     // グラフ手計算に書いてあるカラーリングをメモ
+    /*
     Sinitial.S[2].vertexes.insert(3);
     Sinitial.S[2].vertexes.insert(5);
     Sinitial.S[0].vertexes.insert(1);
@@ -218,12 +267,19 @@ void TSHwithPR::PathRelinking::DAG::_test2() {
     Sguiding.search_color[2] = 0;
     Sguiding.search_color[5] = 2;
     Sguiding.num_color = 3;
-
+*/
     Sguiding.score = EvalFunction(Sguiding);
     Sinitial.score = EvalFunction(Sinitial);
     Build({0,2,3,4},Sinitial,Sguiding);
     cout << "dag graph" << endl;
     for( vector<int> v : dag_graph) {
+        for( int e : v) {
+            cout << e << " ";
+        }
+        cout << endl;
+    }
+    cout << "reverse_dag graph" << endl;
+    for( vector<int> v : reverse_dag_graph) {
         for( int e : v) {
             cout << e << " ";
         }

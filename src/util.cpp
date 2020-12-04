@@ -56,6 +56,7 @@ bool set_comp_greater (const set<int> &left,const set<int> &right) {
 }
 bool set_int_equal (const set<int> &left,const set<int> &right) {
     return left.size() == right.size() && equal(left.begin(),left.end(),right.begin(),right.end());
+    //return left.size() == right.size() && equal(left.begin(),left.end(),right.begin());
 }
 
 vector<string> split(string str,char del) {
@@ -114,9 +115,6 @@ void ColorSet::MoveVertexColor(int vertex,int after_color) {
         int pre_color = search_color[vertex];
         int pre_size = S[pre_color].vertexes.size();
         S[pre_color].vertexes.erase(vertex);
-        if( pre_size == S[pre_color].vertexes.size() ) {
-            cout << "ありえないバグ" << endl;
-        }
     }
     this->search_color[vertex] = after_color; //追加も入れ替えも両対応(map最高!)
     this->S[after_color].vertexes.insert(vertex);

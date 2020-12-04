@@ -12,4 +12,5 @@ int main(){
     //test.Analize();
     //test._test2();
     test.Input4Train();
+    //test._PathRelinkingTest();
 }

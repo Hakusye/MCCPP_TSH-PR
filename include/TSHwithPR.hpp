@@ -35,7 +35,7 @@ class TSHwithPR : public MCCPP {
 
 class TSHwithPR::Greedy {
   public:
-    static std::tuple<std::set<int>,bool,ColorSet> CriticalOneMoveNeighborhood(const ColorSet &target_color_set);         // feasible search
+    static std::tuple<std::set<int>,bool,bool,int,int> CriticalOneMoveNeighborhood(const ColorSet &target_color_set);         // feasible search
     static void ReassignLargestCardinality(double RF); // solution_improvement
 };
 
@@ -46,7 +46,7 @@ class TSHwithPR::LocalSearch {
 
 class TSHwithPR::PathRelinking {
   public:
-    static std::pair<ColorSet,std::set<int>> CalcMoveDistance(const ColorSet &initial_S,ColorSet guiding_S);
+    static std::pair<ColorSet,std::set<int>> CalcMoveDistance(const ColorSet &initial_S,const ColorSet &guiding_S);
     static ColorSet CalcPathRelinking(const ColorSet &initial_S,const ColorSet &goal_S,std::set<int> move_vertex);
     class BeamSearch; //内部クラスの内部クラス
     class DAG;
@@ -87,6 +87,7 @@ class TSHwithPR::PathRelinking::DAG {
     static std::vector<std::vector<int>> dag_graph;
     static std::vector<std::vector<int>> reverse_dag_graph; //逆向きの有向グラフ.逆向きに参照したい時に使う
     static std::vector<std::vector<int>> dag2original_vertexes;//dagの頂点から元の有向グラフ時の頂点番号を引き出すやつ
+    static std::vector<std::set<int>> transitive_closure;
     static std::vector<int> dag_weight;
 
   public:
@@ -97,6 +98,7 @@ class TSHwithPR::PathRelinking::DAG {
     static std::vector<int> MakeDagWeight(const StronglyConnectedComponents &SCC,const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set); //その頂点集合の色を変更した場合のスコア増減の記録
     static std::vector<std::vector<int>> MakeDag2OriginalVertexes(const StronglyConnectedComponents &SCC,const std::vector<int> &move_vertexes);
     static void MakeReverseDagGraph();
+    static void MakeTransitiveClosure(); //ワーシャルフロイドで書く
     static void Build(const std::vector<int> &move_vertexes,const ColorSet &init_set,const ColorSet &guiding_set);
     // 色変するかしないかのbool。move_vertexesの配列番号順に返す。
     static std::vector<bool> DagGreedy();

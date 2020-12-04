@@ -80,33 +80,21 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
     _ShowColorSet(current_color);
     do {
         num++;
-        bool conflict_check = true;
-        int tep = 0; //テストするための変数
+        cout << "iterator:"<< num << endl;
         // 8/9 ... MoveVertex後の話。proper_colorにする過程では停止していなそう
         clock_t greedy_time = clock();
-        while(conflict_check) { 
-            auto [ conf, check , tmp_color ] = Greedy::CriticalOneMoveNeighborhood( current_color );
-            current_color = tmp_color;
-            conflict_check = check;
-            if(conf.size() == 1) tep++;
-            if(tep == 10) {
-                // バグったときのグラフ出力
-                for( int vertex : conf) {
-                    cout << "衝突頂点" << endl;
-                    cout << vertex << " " << tmp_color.GetSearchColor()[vertex] << endl;
-                    cout << "隣接頂点" << endl;
-                    for(int vadja :graph[vertex] ) {
-                        cout << vadja << " " << tmp_color.GetSearchColor()[vadja] << endl;
-                    }
-                    cout << "最終カラリング" << endl;
-                    _ShowColorSet(tmp_color);
-                }
-                exit(1);
-            }
-            //_ShowColorSet(current_color);
+        while(true) {  //checkがfalseのとき(衝突がない)抜ける
+            auto [ conf, check , increase_color, change_vertex,change_color ] = Greedy::CriticalOneMoveNeighborhood( current_color );
+            //current_color = tmp_color;
+            if(!check) break;
+            if(increase_color) current_color.num_color++;
+            current_color.score = DiffEvalFunction( current_color, change_vertex,change_color );
+            current_color.MoveVertexColor( change_vertex, change_color );
         }
+        current_color.score = EvalFunction(current_color);
         clock_t conflict_time = clock();
         current_color = LocalSearch::Reassign2SmallerOne( current_color );
+        //cout << "local search:" << current_color.score << endl;
         EliteSetUpdate::PriorHighScore( current_color );
         ColorSet Sguiding = elite_set[mt() % elite_set.size()];
         if(elite_set.size() < 2) {
@@ -114,27 +102,25 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             continue;
         }
         clock_t local_search_time = clock();
+        Sguiding.GreaterSort();
         auto [ Sgoal, move_vertexes ] = PathRelinking::CalcMoveDistance ( current_color,Sguiding );
-        clock_t  move_distance_time = clock();
         if( move_vertexes.size() >= 3 ) {
-            cout << "iterator:"<< num << endl;
             // path_relinking周り
             //PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
-            current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
-            vector<int> move_vertexes_vec( move_vertexes.begin(),move_vertexes.end() );
+            //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            //current_color = PathRelinking::BeamSearch::Output( ); 
+            //cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
             //DAGのやつ
-            /* 
+            //cout << "before DAG:" << current_color.score << endl;
+            vector<int> move_vertexes_vec( move_vertexes.begin(),move_vertexes.end() );
             TSHwithPR::PathRelinking::DAG::Build(move_vertexes_vec ,current_color ,Sgoal);
             vector<int> change_vertexes = TSHwithPR::PathRelinking::DAG::CalcChangesVertexes( move_vertexes_vec );
             for( int v : change_vertexes ) {
-                current_color.MoveVertexColor( v , Sgoal.search_color[v] );
-                current_color.score = DiffEvalFunction(current_color, v, Sgoal.search_color[v]);
-            } 
-            */
-            //current_color.score = EvalFunction(current_color);
+               current_color.score = DiffEvalFunction( current_color, v, Sgoal.GetSearchColor()[v] );
+                current_color.MoveVertexColor( v , Sgoal.GetSearchColor()[v] );
+            }
+            //cout << "after DAG:" << current_color.score << endl;
             //事後処理
-            //current_color = PathRelinking::BeamSearch::Output( ); 
-            //cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
             current_color = LocalSearch::Reassign2SmallerOne( current_color );
             EliteSetUpdate::PriorHighScore( current_color );
         }
@@ -143,16 +129,12 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
         //current_color = Perturbation::SetRandomColor( current_color,30 );
         if( num % 10 == 9 ) {
             SaveLearningCurve(num/5,log_name);
-            //cout << "greedy:" << greedy_time - iter_time << endl;
-            //cout << "improve_comflict:" <<  conflict_time - greedy_time << endl;
-            //cout << "local_search:" << local_search_time - conflict_time << endl;
-            //cout << "move distance:" << move_distance_time - local_search_time << endl;
-            //cout << "path relinking:" << path_relink_time - move_distance_time << endl;
         }
         iter_time = clock();
-    }while( num != 40 );
+    }while( num != 30 );
     cout << "結果" << endl;
     // floatによって桁起してるから最後にしっかり調整する -> long long にした
     //current_color.score = EvalFunction(current_color);
     _ShowColorSet( Result() );
+
 }

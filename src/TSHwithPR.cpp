@@ -20,30 +20,28 @@ TSHwithPR::~TSHwithPR() {
 
 //テストクリア(テストケース.. _Reassigntest) ただし、tabulist追加してない
 // 1回の実行につきひとつの衝突をなくす。1つ1つの動作はbast solutionを選ぶ
-tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(const ColorSet &target_color_set) {
+tuple<set<int>,bool,bool,int,int> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(const ColorSet &target_color_set) {
     //衝突頂点ををループ(入力として与えておく?)
     //すべての衝突頂点に衝突を無くせる色に変える全探索をして一番よかったやつにする
     //まだtabulistを組み込んでいない
-    ColorSet ans_color_set = target_color_set;
     //最終結果記録。念の為に0頂点の色を記録(変更なしのときに書き換えが行われないように)
     bool increase_num_color = false;
     int ans_score = target_color_set.score;
-    int change_vertex = 0;
-    int change_color = target_color_set.GetSearchColor()[0];
+    int change_vertex;
+    int change_color;
     //衝突セットつくる
     set<int> conflict_set;
-    vector<ColorClass> target_color_classes = target_color_set.GetColorSet();
     for (int vertex = 0; vertex < graph.size(); vertex++) {
         int v_color = target_color_set.GetSearchColor().at(vertex);
-        set<int> adjacent_set = AdjacentColorSet(target_color_classes[v_color].vertexes,vertex);
+        set<int> adjacent_set = AdjacentColorSet(target_color_set.GetColorSet()[v_color].vertexes,vertex);
         if(!adjacent_set.empty()) conflict_set.insert(vertex);
     }
     if(conflict_set.empty()) {
-        return { conflict_set,false, target_color_set };
+        return { {},false, false,-1,-1 };  //2番目がfalseなら他は関係ない
     }
     for (int vertex : conflict_set) {
         int current_color = target_color_set.GetSearchColor()[vertex];
-        long long tmp_score;
+        long long tmp_score = INF;
         for ( int color = 0; color <= target_color_set.num_color; color++) {
             if(color == current_color) continue;
             //次に変える予定の色と隣接していないものをえらぶ
@@ -59,10 +57,7 @@ tuple<set<int>,bool,ColorSet> TSHwithPR::Greedy::CriticalOneMoveNeighborhood(con
             }
         }
     }
-    ans_color_set.score = ans_score;
-    ans_color_set.MoveVertexColor(change_vertex,change_color);
-    if(increase_num_color) ans_color_set.num_color++;
-    return { conflict_set, true, ans_color_set };
+    return { conflict_set, true, increase_num_color, change_vertex, change_color };
 }
 //バグ発見 <- 対処済み
 //多分完璧(RF=1.0で完全な貪欲ができる)
@@ -110,69 +105,73 @@ ColorSet TSHwithPR::LocalSearch::Reassign2SmallerOne( ColorSet color_set ) {
     color_set.SortColorWeight();
     color_set.score = EvalFunction(color_set);
     // 頂点数が多い順に回し、今選ばれているカラークラスより小さいやつ(なければそのサイズ)にいれる
-    vector<ColorClass> color_classes = color_set.GetColorSet();
-    for (int target_color = 1; target_color < color_classes.size(); target_color++) {
-        set<int> target_vartex = color_classes[target_color].vertexes;
+    //vector<ColorClass> color_classes = color_set.GetColorSet();
+    for (int target_color = 1; target_color < color_set.GetColorSet().size(); target_color++) {
+        set<int> target_vartex = color_set.GetColorSet()[target_color].vertexes;
         for(int vertex : target_vartex) { 
             for (int cacndidate_color = 0; cacndidate_color < target_color+1; cacndidate_color++) {
                 //候補集合と今見ている頂点が隣接してるならスキップ
-                set<int> adjacent_check = AdjacentColorSet(color_classes[cacndidate_color].vertexes,vertex);
+                set<int> adjacent_check = AdjacentColorSet(color_set.GetColorSet()[cacndidate_color].vertexes,vertex);
                 if(!adjacent_check.empty()) continue;
                 //更新。これより後ろみても意味なしなのでbreak
                 color_set.score = DiffEvalFunction(color_set,vertex,cacndidate_color);
+                //cout << "changed:" << color_set.score << endl;
                 color_set.MoveVertexColor( vertex,cacndidate_color );
                 break;
             }
         } 
     }
+
     return color_set;
 }
 //どんな色分けになるかのカラーセット(評価関数はおかしいまま),どの頂点を移動すれば良いかを返す
-//テストクリア(テストケース... _CalcMoveDistanceTest) : バグ残っててもおかしくないのでcerrは残す
-pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(const ColorSet &initial_set,ColorSet guiding_set) {
+//テスト多分完璧
+pair<ColorSet,set<int>> TSHwithPR::PathRelinking::CalcMoveDistance(const ColorSet &initial_set,const ColorSet &guiding_set) {
     //論文通りの方が確実なのでやる。
-    ColorSet ans_set;
-    ans_set = initial_set;
+    ColorSet ans_set = initial_set;
     set<int> confirm_vertexes;
     set<int> move_vertexes;
-    guiding_set.GreaterSort();
+    //guiding_set.GreaterSort(); メインの方でgreatersortしておく
     vector<ColorClass> guiding_color_classes = guiding_set.GetColorSet();
-     
-    for ( int target_color = 0; target_color < guiding_set.GetColorSet().size(); target_color++ ) {
+    //_ShowColorSet(guiding_set); 正しい 
+    for ( int target_color = 0; target_color < guiding_color_classes.size(); target_color++ ) {
         if(guiding_color_classes[target_color].vertexes.empty()) break; //sortしてあるのでbreakでok
-        vector<pair<set<int>,int>> color_pertition(guiding_set.GetColorSet().size());
-        for(int i = 0; i < ans_set.GetColorSet().size(); i++) {
+        vector<pair<set<int>,int>> color_pertition(guiding_color_classes.size());
+        vector<ColorClass> ans_color_classes = ans_set.GetColorSet();
+        for(int i = 0; i < ans_color_classes.size(); i++) {
             color_pertition[i].second = i;
-            color_pertition[i].first = IntersectionSet2Set(guiding_color_classes[target_color].vertexes,ans_set.GetColorSet()[i].vertexes);
+            color_pertition[i].first = IntersectionSet2Set(guiding_color_classes[target_color].vertexes,ans_color_classes[i].vertexes);
         }
         //揃ってる部分が多い順にしたい
         sort( color_pertition.begin(),color_pertition.end(),pair_set_int_comp_greater );
         bool move = false; //下のfor抜けた後のフラグとして使う
-        //9行目のwhileの意味あとで考える
         for (int pertition = 0; pertition < color_pertition.size(); pertition++) {
             if(color_pertition[pertition].first.empty() || move) break;
             
             int ans_set_pertition = color_pertition[pertition].second;
-            set<int> tmp_minus_pertition = RemoveSet2Set(ans_set.GetColorSet()[pertition].vertexes,color_pertition[ans_set_pertition].first);
-            if( (!set_int_equal(color_pertition[pertition].first ,ans_set.GetColorSet()[ans_set_pertition].vertexes)) && 
-            (!IntersectionSet2Set(tmp_minus_pertition,confirm_vertexes).empty())) continue;
+            set<int> tmp_minus_pertition = RemoveSet2Set(ans_color_classes[ans_set_pertition].vertexes,color_pertition[pertition].first);
+            
+            if( (!set_int_equal(color_pertition[pertition].first ,ans_color_classes[ans_set_pertition].vertexes)) && 
+            (!IntersectionSet2Set(tmp_minus_pertition,confirm_vertexes).empty()) ) continue;
             move = true; 
             for(int vertex : guiding_color_classes[target_color].vertexes) {
-                if(color_pertition[pertition].first.find(vertex) != color_pertition[pertition].first.end() ) continue;
                 ans_set.MoveVertexColor(vertex,ans_set_pertition);
             }
             set<int> insert_set = RemoveSet2Set(guiding_color_classes[target_color].vertexes,color_pertition[pertition].first);
             move_vertexes.insert(insert_set.begin(),insert_set.end());
-            confirm_vertexes.insert(guiding_color_classes[pertition].vertexes.begin(),guiding_color_classes[pertition].vertexes.end());
+            //confirm_vertexes.insert(guiding_color_classes[pertition].vertexes.begin(),guiding_color_classes[pertition].vertexes.end());
+            confirm_vertexes.insert(guiding_color_classes[target_color].vertexes.begin(),guiding_color_classes[target_color].vertexes.end());
         }
         if(!move) {
-            bool roop=true;
             int new_color = 0;
-            while(roop) {
-                if(ans_set.GetColorSet()[new_color].vertexes.empty()) roop = false;
-                else new_color++;
+            while(true) {
+                if(ans_set.GetColorSet()[new_color].vertexes.empty()) break;
+                else {
+                    new_color++;
+                    if(ans_set.num_color > new_color) ans_set.num_color = new_color;
+                }
             }
-            for( int vertex : guiding_set.GetColorSet()[target_color].vertexes) {
+            for( int vertex : guiding_color_classes[target_color].vertexes) {
                 ans_set.MoveVertexColor(vertex,new_color);
             }
             move_vertexes.insert(guiding_color_classes[target_color].vertexes.begin(),guiding_color_classes[target_color].vertexes.end());
@@ -223,11 +222,12 @@ ColorSet TSHwithPR::Perturbation::SetRandomColor(ColorSet target_color_set,int m
             }
             if(tmp_color != target_color_set.GetSearchColor()[vertex]) break;
         }
-        target_color_set.score = DiffEvalFunction(target_color_set,vertex,tmp_color);
+        //target_color_set.score = DiffEvalFunction(target_color_set,vertex,tmp_color);
         target_color_set.MoveVertexColor(vertex,tmp_color);
         VertexMove tabu_insert = {vertex,tmp_color};
         tabu_list.insert(tabu_insert);
     }
+    target_color_set.score = EvalFunction( target_color_set );
     return target_color_set;
 }
 //テストクリア(テストケース... _EliteSetUpdateTest)
@@ -265,12 +265,15 @@ void TSHwithPR::ResetData() {
 }
 
 ColorSet TSHwithPR::Result() {
-    ColorSet ans_color_set;
-    ans_color_set.score = INF;
-    for (ColorSet color_set : elite_set) {
-        if(ans_color_set.score > color_set.score) ans_color_set = color_set;
+    int score = INF;
+    int ans = -1;
+    for ( int i = 0;i < elite_set.size(); i++) {
+        if( score > elite_set[i].score ) {
+            score = elite_set[i].score;
+            ans = i;
+        }
     }
-    return ans_color_set;
+    return elite_set[ans];
 }
 //最終実行
 void TSHwithPR::Run() {
@@ -280,13 +283,18 @@ void TSHwithPR::Run() {
     Greedy::ReassignLargestCardinality(0.9);
     current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
+    bool conflict_check = true;
     do {
         bool conflict_check = true;
-        while(conflict_check){ 
-            auto [tmp, check , tmp_color ] = Greedy::CriticalOneMoveNeighborhood( current_color );
-            current_color = tmp_color;
+        while(conflict_check) { 
+            auto [ conf, check , increase_color, change_vertex,change_color ] = Greedy::CriticalOneMoveNeighborhood( current_color );
+            //current_color = tmp_color;
             conflict_check = check;
+            if(increase_color) current_color.num_color++;
+            current_color.score = DiffEvalFunction( current_color, change_vertex,change_color );
+            current_color.MoveVertexColor( change_vertex, change_color );
             //_ShowColorSet(current_color);
+            cout << current_color.score << endl;
         }
         current_color = LocalSearch::Reassign2SmallerOne( current_color );
         EliteSetUpdate::PriorHighScore( current_color );
@@ -357,8 +365,8 @@ void TSHwithPR::_ReassignTest() {
     //exit(0);
     bool ok = true;
     while(ok) { //Criticalを回す条件式は後で考える必要あり
-        auto[ a,tmp, tmp_color ] = Greedy::CriticalOneMoveNeighborhood(current_color);
-        ok = tmp;
+       // auto[ a,tmp, tmp_color ] = Greedy::CriticalOneMoveNeighborhood(current_color);
+        //ok = tmp;
         //_ShowColorSet(current_color);
     }
     _ShowColorSet(current_color);
@@ -370,7 +378,6 @@ void TSHwithPR::_Reassign2SmallerOneTest() {
     current_color.score = EvalFunction(current_color);
     _ShowColorSet(current_color);
 }
-/*
 void TSHwithPR::_PathRelinkingTest() { //元はCalcDistanceTest
     ColorSet Sinitial,Sguiding;
     InputGraph();
@@ -378,44 +385,50 @@ void TSHwithPR::_PathRelinkingTest() { //元はCalcDistanceTest
     Sinitial = init_color;
     Sguiding = init_color;
     // グラフ手計算に書いてあるカラーリングをメモ
-    Sinitial.S[0].vertexes.insert(3);
-    Sinitial.S[0].vertexes.insert(5);
-    Sinitial.S[0].vertexes.insert(1);
-    Sinitial.S[0].vertexes.insert(2);
     Sinitial.S[0].vertexes.insert(0);
+    Sinitial.S[2].vertexes.insert(1);
+    Sinitial.S[0].vertexes.insert(2);
+    Sinitial.S[1].vertexes.insert(3);
     Sinitial.S[0].vertexes.insert(4);
-    Sinitial.search_color[3] = 0;
-    Sinitial.search_color[5] = 0;
-    Sinitial.search_color[1] = 0;
-    Sinitial.search_color[2] = 0;
+    Sinitial.S[2].vertexes.insert(5);
+    Sinitial.S[1].vertexes.insert(6);
     Sinitial.search_color[0] = 0;
+    Sinitial.search_color[1] = 2;
+    Sinitial.search_color[2] = 0;
+    Sinitial.search_color[3] = 1;
     Sinitial.search_color[4] = 0;
-    Sinitial.num_color = 1;
+    Sinitial.search_color[5] = 2;
+    Sinitial.search_color[6] = 1;
+    Sinitial.num_color = 3;
 
-    Sguiding.S[1].vertexes.insert(0);
-    Sguiding.S[1].vertexes.insert(3);
+    Sguiding.S[0].vertexes.insert(0);
+    Sguiding.S[2].vertexes.insert(1);
+    Sguiding.S[1].vertexes.insert(2);
+    Sguiding.S[0].vertexes.insert(3);
     Sguiding.S[1].vertexes.insert(4);
-    Sguiding.S[0].vertexes.insert(1);
-    Sguiding.S[0].vertexes.insert(2);
     Sguiding.S[2].vertexes.insert(5);
-    Sguiding.search_color[0] = 1;
-    Sguiding.search_color[3] = 1;
+    Sguiding.S[1].vertexes.insert(6);
+    Sguiding.search_color[0] = 0;
+    Sguiding.search_color[1] = 2;
+    Sguiding.search_color[2] = 1;
+    Sguiding.search_color[3] = 0;
     Sguiding.search_color[4] = 1;
-    Sguiding.search_color[1] = 0;
-    Sguiding.search_color[2] = 0;
     Sguiding.search_color[5] = 2;
+    Sguiding.search_color[6] = 1;
     Sinitial.num_color = 3;
 
     Sguiding.score = EvalFunction(Sguiding);
     Sinitial.score = EvalFunction(Sinitial);
-    auto[ ans_color_set , move_vertexes ] = PathRelinkng::CalcMoveDistance( Sinitial, Sguiding );
+    Sguiding.GreaterSort();
+    auto[ ans_color_set , move_vertexes ] = PathRelinking::CalcMoveDistance( Sinitial, Sguiding);
+    cout << "move_vertex:";
+    for(int i : move_vertexes) cout << i << " ";
     _ShowColorSet(ans_color_set);
-    ColorSet after_pathrelinking = PathRelinkng::PathRelinking(Sinitial,Sguiding,ans_color_set,move_vertexes);
-    _ShowColorSet(after_pathrelinking);
-    after_pathrelinking = Perturbation::SetRandomColor(after_pathrelinking);
-    _ShowColorSet(after_pathrelinking);
+    //ColorSet after_pathrelinking = PathRelinkng::PathRelinking(Sinitial,Sguiding,ans_color_set,move_vertexes);
+    //_ShowColorSet(after_pathrelinking);
+    //after_pathrelinking = Perturbation::SetRandomColor(after_pathrelinking);
+    //_ShowColorSet(after_pathrelinking);
 }
-*/
 void TSHwithPR::_EliteSetUpdateTest() {
     ColorSet a[20];
     for (int i = 0; i < 20; i++) {

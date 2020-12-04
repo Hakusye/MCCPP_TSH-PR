@@ -44,9 +44,9 @@ void MCCPP::_ShowGraph() {
 void MCCPP::_ShowColorSet(const ColorSet &color_set) {
     cout << "score:" << color_set.score  << endl;
     vector<ColorClass> target_color_class = color_set.GetColorSet();
-    for(ColorClass color_class : target_color_class) {
-        if(color_class.vertexes.size() == 0) continue;
-        for(int vertex : color_class.vertexes) { 
+    for( int i = 0; i < target_color_class.size(); i++ ) {
+        if(target_color_class[i].vertexes.size() == 0) continue;
+        for(int vertex : target_color_class[i].vertexes) { 
             cout << vertex << " ";
         }
         cout << endl;
