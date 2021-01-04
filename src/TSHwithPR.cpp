@@ -308,7 +308,6 @@ void TSHwithPR::Run() {
         current_color = LocalSearch::Reassign2SmallerOne( current_color );
         EliteSetUpdate::PriorHighScore( current_color );
         current_color = Perturbation::SetRandomColor( current_color,sqrt( graph.size() ) );
-        cout << "aa" << endl;
     }while( double( clock() - start ) / CLOCKS_PER_SEC < 15.0 );
     cout << "結果" << endl;
     // floatによって桁起してるから最後にしっかり調整する -> long long にした

@@ -58,26 +58,58 @@ void AnalizerForTSH::Analize() {
 }
 
 void AnalizerForTSH::Input4Train() {
-    InputGraph();
-    InputColorSet();
     clock_t start = clock();
-    Train("log/test.score");
-    cout << "total time:" << clock() - start << endl;
+    int maxi = -1;
+    int mini = 1e9+7;
+    float sum=0;
+    float average;
+    InputGraph( );
+    InputColorSet( );
+    for( int i = 0 ;i < 10; i++) {
+        cout << "試行回数:" <<  i << endl;
+        int tmp = Train( "log/test.score" );
+        maxi = max( maxi, tmp );
+        mini = min( mini, tmp );
+        sum += tmp;
+        elite_set.clear();
+        //current_color.InitColorSet(init_color);
+        current_color = init_color;
+    }
+    average = sum / 10.0;
+    cout << "min:" << mini << endl;
+    cout << "max:" << maxi << endl;
+    cout << "averavge:" << average << endl;
+    cout << "total time:" << (clock() - start) / CLOCKS_PER_SEC << endl;
 }
 
 void AnalizerForTSH::Input4Train(string graph_name ,string color_name,string log_name = "log/test.score") {
+    int maxi = -1;
+    int mini = 1e9+7;
+    float sum=0;
+    float average;
     InputGraph( graph_name );
     InputColorSet( color_name );
-    Train( log_name );
+    for( int i = 0 ;i < 1; i++) {
+        cout << "試行回数:" <<  i << endl;
+        int tmp = Train( log_name );
+        maxi = max( maxi, tmp );
+        mini = min( mini, tmp );
+        sum += tmp;
+    }
+    average = sum / 10.0;
+    cout << "min:" << mini << endl;
+    cout << "max:" << maxi << endl;
+    cout << "averavge:" << average << endl;
 }
 
 // 色々込み込みで実行するやつ
-void AnalizerForTSH::Train(string log_name ="log/test.score") {
+//普段はvoid。実験自動化のため
+int AnalizerForTSH::Train(string log_name ="log/test.score") {
     clock_t iter_time = clock();
     int num = 0;
-    Greedy::ReassignLargestCardinality(0.9);
+    Greedy::ReassignLargestCardinality(0.95);
     current_color.score = EvalFunction(current_color);
-    _ShowColorSet(current_color);
+    //_ShowColorSet(current_color);
     do {
         num++;
         cout << "iterator:"<< num << endl;
@@ -106,12 +138,12 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
         auto [ Sgoal, move_vertexes ] = PathRelinking::CalcMoveDistance ( current_color,Sguiding );
         if( move_vertexes.size() >= 3 ) {
             // path_relinking周り
-            //PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
             //current_color = PathRelinking::CalcPathRelinking( current_color, Sgoal ,move_vertexes );
+            //PathRelinking::BeamSearch::NodeSearch( current_color, Sgoal ,move_vertexes ); 
             //current_color = PathRelinking::BeamSearch::Output( ); 
             //cout << "beam_search - greedy = "<< PathRelinking::BeamSearch::Output().score - current_color.score   << endl;
             //DAGのやつ
-            //cout << "before DAG:" << current_color.score << endl;
+             
             vector<int> move_vertexes_vec( move_vertexes.begin(),move_vertexes.end() );
             TSHwithPR::PathRelinking::DAG::Build(move_vertexes_vec ,current_color ,Sgoal);
             vector<int> change_vertexes = TSHwithPR::PathRelinking::DAG::CalcChangesVertexes( move_vertexes_vec );
@@ -119,7 +151,7 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
                current_color.score = DiffEvalFunction( current_color, v, Sgoal.GetSearchColor()[v] );
                 current_color.MoveVertexColor( v , Sgoal.GetSearchColor()[v] );
             }
-            //cout << "after DAG:" << current_color.score << endl;
+            
             //事後処理
             current_color = LocalSearch::Reassign2SmallerOne( current_color );
             EliteSetUpdate::PriorHighScore( current_color );
@@ -131,10 +163,14 @@ void AnalizerForTSH::Train(string log_name ="log/test.score") {
             SaveLearningCurve(num/5,log_name);
         }
         iter_time = clock();
-    }while( num != 30 );
+    }while( num != 50 );
     cout << "結果" << endl;
     // floatによって桁起してるから最後にしっかり調整する -> long long にした
     //current_color.score = EvalFunction(current_color);
     _ShowColorSet( Result() );
-
+    long long ans = 1e9+7;
+    for(int i=0; i < elite_set.size(); i++) {
+        ans = min( ans,elite_set[i].score );
+    }
+    return ans;
 }

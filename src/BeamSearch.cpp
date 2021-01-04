@@ -37,7 +37,6 @@ void TSHwithPR::PathRelinking::BeamSearch::NodeSearch(const ColorSet &initial_S,
                 UpdateDP( colorset, *itr, goal_S.GetSearchColor()[*itr], (count+1)%2, moving_bit, move_vertexes );
             }
         }
-        //cout << "search end" << endl;
         //このタイミングで最も良い結果を記録(仮実装)
         pair<long long,string> optimal_score = *(sort_score_DP.begin());
         //探索し終わった深さの最も良い評価がoptimal_colorsetよりも良い評価なら更新
@@ -50,8 +49,6 @@ void TSHwithPR::PathRelinking::BeamSearch::NodeSearch(const ColorSet &initial_S,
             DP[(count+1)%2].erase((*itr).second);
             sort_score_DP.erase(itr);
         }
-        //cout << DP[count%2].size() << " " << DP[(count+1)%2].size() << endl;
-        //cout << "roop end" << endl;
         count++; // DPの配列を変更
         sort_score_DP.clear();
     }
